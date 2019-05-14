@@ -1,0 +1,7 @@
+{
+  "jdbcUser": "root",
+  "jdbcPassword": "toor",
+  "jdbcUrl": "jdbc:mysql://localhost:3307/sakila",
+  "jdbcCatalog": "sakila",
+  "jdbcSchema": null
+}

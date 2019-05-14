@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "defaultSchema": "mc_db",
+  "schemas": [
+    {
+      "name": "mc_db_amazon",
+      "type": "custom",
+      "factory" : "org.apache.calcite.adapter.jdbc.MultiCloudJdbcSchema$Factory",
+      "operand": {
+        "jdbcUser": "root",
+        "jdbcPassword": "toor",
+        "jdbcUrl": "jdbc:mysql://localhost:3307/mc_db_amazon",
+        "jdbcCatalog": "mc_db_amazon"
+      }
+    },
+    {
+      "name": "mc_db_google",
+      "type": "custom",
+      "factory" : "org.apache.calcite.adapter.jdbc.MultiCloudJdbcSchema$Factory",
+      "operand": {
+        "jdbcUser": "root",
+        "jdbcPassword": "toor",
+        "jdbcUrl": "jdbc:mysql://localhost:3307/mc_db_google",
+        "jdbcCatalog": "mc_db_google"
+      }
+    },
+    {
+      "name": "mc_db",
+      "type": "custom",
+      "factory" : "org.apache.calcite.adapter.jdbc.MultiCloudJdbcSchema$Factory",
+      "operand": {
+        "jdbcUser": "root",
+        "jdbcPassword": "toor",
+        "jdbcUrl": "jdbc:mysql://localhost:3307/mc_db",
+        "jdbcCatalog": "mc_db"
+      }
+    }
+  ]
+}

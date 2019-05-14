@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- The basics. -->
+    <groupId>multi.cloud.security</groupId>
+    <artifactId>cloudsec</artifactId>
+    <packaging>pom</packaging>
+    <version>1.0</version>
+
+    <!-- More project information. -->
+    <name>CloudSec</name>
+    <description>CloudSec</description>
+    <inceptionYear>2018</inceptionYear>
+
+    <mailingLists>
+        <mailingList>
+            <name>CloudSec team members list</name>
+            <unsubscribe>cloudsec@calcite.apache.org</unsubscribe>
+            <subscribe>cloudsec@calcite.apache.org</subscribe>
+            <post>cloudsec@calcite.apache.org</post>
+        </mailingList>
+    </mailingLists>
+
+    <properties>
+        <calcite.version>1.19.0</calcite.version>
+        <logger.version>1.2.3</logger.version>
+        <mysql-driver.version>8.0.15</mysql-driver.version>
+    </properties>
+
+    <modules>
+        <module>core</module>
+        <module>application</module>
+    </modules>
+
+    <!-- No dependencies here. Declare dependency VERSIONS in
+      dependencyManagement, below, and each dependency in the module that uses
+      it. -->
+    <dependencies />
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Sorted by groupId, artifactId; calcite dependencies first. -->
+            <dependency>
+                <groupId>org.apache.calcite</groupId>
+                <artifactId>calcite-core</artifactId>
+                <version>${calcite.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.calcite</groupId>
+                <artifactId>calcite-core</artifactId>
+                <type>test-jar</type>
+                <version>${calcite.version}</version>
+            </dependency>
+
+            <!-- Now third-party dependencies, sorted by groupId and artifactId. -->
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logger.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${mysql-driver.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>
