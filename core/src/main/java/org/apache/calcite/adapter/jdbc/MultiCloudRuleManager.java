@@ -2,7 +2,9 @@ package org.apache.calcite.adapter.jdbc;
 
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.JoinRelType;
@@ -24,16 +26,10 @@ public class MultiCloudRuleManager {
     private static final Logger logger = LoggerFactory.getLogger(MultiCloudRuleManager.class);
 
     public static RuleSet rules() {
-        return rules(null);
-    }
-
-    private static RuleSet rules(JdbcConvention out) {
-        return rules(out, RelFactories.LOGICAL_BUILDER);
-    }
-
-    private static RuleSet rules(JdbcConvention out, RelBuilderFactory relBuilderFactory) {
         return RuleSets.ofList(
                 MultiCloudScanRewriterRule.INSTANCE
+                // TODO: This is where you tell planner which rules to execute. Just add them like this:
+                // , MyCustomRule.INSTANCE
         );
     }
 
@@ -125,6 +121,24 @@ public class MultiCloudRuleManager {
                 call.transformTo(multiCloudScan);
                 logger.debug(call.getMetadataQuery().getCumulativeCost(multiCloudScan).toString());
             }
+        }
+    }
+
+    // TODO: Add more rules as new RelOptRule class HERE. For example:
+    public static class MyCustomRule extends RelOptRule {
+        public static final RelOptRule INSTANCE =
+                new MyCustomRule(RelFactories.LOGICAL_BUILDER);
+
+        public MyCustomRule(RelBuilderFactory relBuilderFactory) {
+            super(operand(AbstractRelNode.class, any()),
+                    relBuilderFactory,
+                    MyCustomRule.class.getSimpleName());
+            logger.debug("INIT custom rule: " + this.getClass().getSimpleName());
+        }
+
+        @Override
+        public void onMatch(RelOptRuleCall call) {
+            // TODO: here you add new logic
         }
     }
 }
