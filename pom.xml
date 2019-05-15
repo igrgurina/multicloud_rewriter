@@ -18,9 +18,7 @@
     <mailingLists>
         <mailingList>
             <name>CloudSec team members list</name>
-            <unsubscribe>cloudsec@calcite.apache.org</unsubscribe>
-            <subscribe>cloudsec@calcite.apache.org</subscribe>
-            <post>cloudsec@calcite.apache.org</post>
+            <post>cloudsec@zemris.fer.hr</post>
         </mailingList>
     </mailingLists>
 
