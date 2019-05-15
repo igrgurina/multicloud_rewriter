@@ -16,8 +16,6 @@ import java.util.List;
  */
 public class MultiCloudProgram implements Program {
 
-    //~ Hook features ---------------------------------------------
-
     @Override
     public RelNode run(RelOptPlanner planner, RelNode rel, RelTraitSet requiredOutputTraits, List<RelOptMaterialization> materializations, List<RelOptLattice> lattices) {
         Program hep = Programs.hep(MultiCloudRuleManager.rules(), false, null);
