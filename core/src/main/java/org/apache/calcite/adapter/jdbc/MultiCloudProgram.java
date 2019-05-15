@@ -7,6 +7,8 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.tools.Program;
 import org.apache.calcite.tools.Programs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -18,6 +20,9 @@ public class MultiCloudProgram implements Program {
 
     @Override
     public RelNode run(RelOptPlanner planner, RelNode rel, RelTraitSet requiredOutputTraits, List<RelOptMaterialization> materializations, List<RelOptLattice> lattices) {
+        // TODO: can this be done better?
+        MultiCloudDataManager.extractFieldListFromOriginalQuery(rel);
+
         Program hep = Programs.hep(MultiCloudRuleManager.rules(), false, null);
 
         RelNode run = hep.run(planner, rel, requiredOutputTraits, materializations, lattices);
@@ -25,3 +30,4 @@ public class MultiCloudProgram implements Program {
         return run;
     }
 }
+
