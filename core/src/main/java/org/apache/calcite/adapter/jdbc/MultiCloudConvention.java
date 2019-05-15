@@ -10,10 +10,6 @@ import org.slf4j.LoggerFactory;
 public class MultiCloudConvention extends JdbcConvention {
     private static final Logger logger = LoggerFactory.getLogger(MultiCloudConvention.class);
 
-    /** Cost of a MultiCloud node versus implementing an equivalent node in a "typical"
-     * calling convention. */
-    public static final double COST_MULTIPLIER = 0.8d;
-
     public MultiCloudConvention(SqlDialect dialect, Expression expression, String name) {
         super(dialect, expression, name);
     }

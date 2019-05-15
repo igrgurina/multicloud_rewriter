@@ -32,36 +32,39 @@ public class MultiCloudRuleManager {
         );
     }
 
-    //~ Hook features ---------------------------------------------
+    //~ Hook manager ---------------------------------------------
 
-    private static final Program PROGRAM = new MultiCloudProgram();
+    /**
+     * A manager for {@link Hook} features that enables {@link RuleSet} to be executed in heuristic {@link org.apache.calcite.plan.hep.HepPlanner} BEFORE cost-based {@link org.apache.calcite.plan.volcano.VolcanoPlanner} optimization.
+     */
+    public static class MultiCloudHookManager {
+        private static final Program PROGRAM = new MultiCloudProgram();
 
-    private static Hook.Closeable globalProgramClosable;
+        private static Hook.Closeable globalProgramClosable;
 
-    public static void addHook() {
-        if (globalProgramClosable == null) {
-            globalProgramClosable = Hook.PROGRAM.add(program());
+        public static void addHook() {
+            if (globalProgramClosable == null) {
+                globalProgramClosable = Hook.PROGRAM.add(program());
+            }
+        }
+
+        private static Consumer<Holder<Program>> program() {
+            return prepend(PROGRAM);
+        }
+
+        private static Consumer<Holder<Program>> prepend(Program program) { // this doesn't have to be in the separate program
+            return (holder) -> {
+                if (holder == null) {
+                    throw new IllegalStateException("No program holder");
+                }
+                Program chain = holder.get();
+                if (chain == null) {
+                    chain = Programs.standard();
+                }
+                holder.set(Programs.sequence(program, chain));
+            };
         }
     }
-
-    private static Consumer<Holder<Program>> program() {
-        return prepend(PROGRAM);
-    }
-
-    private static Consumer<Holder<Program>> prepend(Program program) { // this doesn't have to be in the separate program
-        return (holder) -> {
-            if (holder == null) {
-                throw new IllegalStateException("No program holder");
-            }
-            Program chain = holder.get();
-            if (chain == null) {
-                chain = Programs.standard();
-            }
-            holder.set(Programs.sequence(program, chain));
-        };
-    }
-
-
 
     //~ Custom rules ---------------------------------------------
 

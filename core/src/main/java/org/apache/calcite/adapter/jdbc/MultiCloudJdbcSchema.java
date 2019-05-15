@@ -56,7 +56,7 @@ public class MultiCloudJdbcSchema extends JdbcSchema {
             JdbcSchema original = MultiCloudJdbcSchema.create(parentSchema, name, operand);
             MultiCloudJdbcSchema target = createFrom(original);
 
-            MultiCloudRuleManager.addHook();
+            MultiCloudRuleManager.MultiCloudHookManager.addHook();
 
             return target;
         }
