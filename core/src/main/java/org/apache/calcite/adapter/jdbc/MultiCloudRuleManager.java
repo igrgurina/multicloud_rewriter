@@ -1,90 +1,81 @@
 package org.apache.calcite.adapter.jdbc;
 
-import com.google.common.collect.ImmutableList;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.externalize.RelWriterImpl;
-import org.apache.calcite.rel.logical.LogicalProject;
-import org.apache.calcite.tools.RelBuilder;
-import org.apache.calcite.tools.RelBuilderFactory;
+import org.apache.calcite.runtime.Hook;
+import org.apache.calcite.tools.*;
+import org.apache.calcite.util.Holder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
-import java.util.List;
+import java.util.function.Consumer;
+
+// used in comments
+import org.apache.calcite.rel.core.*;
 
 public class MultiCloudRuleManager {
     private static final Logger logger = LoggerFactory.getLogger(MultiCloudRuleManager.class);
 
-    public static List<RelOptRule> rules(JdbcConvention out) {
-        return rules(out, RelFactories.LOGICAL_BUILDER);
-    }
-
-    public static List<RelOptRule> rules(JdbcConvention out, RelBuilderFactory relBuilderFactory) {
-        return ImmutableList.of(
-                //MultiCloudProjectRewriterRule.INSTANCE, //new JdbcToEnumerableConverterRule(out, relBuilderFactory)
+    public static RuleSet rules() {
+        return RuleSets.ofList(
                 MultiCloudScanRewriterRule.INSTANCE
+                // TODO: This is where you tell planner which rules to execute. Just add them like this:
+                // , MyCustomRule.INSTANCE
         );
     }
 
+    //~ Hook manager ---------------------------------------------
+
     /**
-     * An example multi-cloud {@link RelOptRule} that triggers on {@link RelNode} match with operand {@link LogicalProject} that has a child operand {@link JdbcTableScan} and none after that.
+     * A manager for {@link Hook} features that enables {@link RuleSet} to be executed in heuristic {@link org.apache.calcite.plan.hep.HepPlanner} BEFORE cost-based {@link org.apache.calcite.plan.volcano.VolcanoPlanner} optimization.
      */
-    public static class MultiCloudProjectRewriterRule extends RelOptRule {
+    public static class MultiCloudHookManager {
+        private static final Program PROGRAM = new MultiCloudProgram();
 
-        //~ Static fields/initializers ---------------------------------------------
+        private static Hook.Closeable globalProgramClosable;
 
-        public static final RelOptRule INSTANCE =
-                new MultiCloudProjectRewriterRule(RelFactories.LOGICAL_BUILDER);
-
-
-        //~ Constructors -----------------------------------------------------------
-
-        /**
-         * Creates an example multi-cloud {@link MultiCloudProjectRewriterRule}.
-         *
-         * @param relBuilderFactory Builder for relational expressions
-         */
-        public MultiCloudProjectRewriterRule(RelBuilderFactory relBuilderFactory) {
-            super(operand(LogicalProject.class,
-                    operand(JdbcTableScan.class, none())),
-                    relBuilderFactory,
-                    MultiCloudProjectRewriterRule.class.getSimpleName());
-            logger.debug("INIT custom rule: " + this.getClass().getSimpleName());
+        public static void addHook() {
+            if (globalProgramClosable == null) {
+                globalProgramClosable = Hook.PROGRAM.add(program());
+            }
         }
 
-        //~ Methods ----------------------------------------------------------------
-        @Override
-        public void onMatch(RelOptRuleCall call) {
-            RelWriter rw = new RelWriterImpl(new PrintWriter(System.out, true));
+        private static Consumer<Holder<Program>> program() {
+            return prepend(PROGRAM);
+        }
 
-            logger.debug("MATCHED OPERAND");
-            final LogicalProject project = call.rel(0);
-            project.explain(rw);
-
-            logger.debug("MATCHED CHILD OPERAND");
-            final JdbcTableScan scan = call.rel(1);
-            scan.explain(rw);
-
-            logger.debug("TRANSFORMED OPERAND");
-            final JdbcTableScan result = new JdbcTableScan(
-                    scan.getCluster(),
-                    scan.getTable(),
-                    scan.jdbcTable, // protected
-                    (JdbcConvention) scan.getConvention()
-            );
-            result.explain(rw);
-
-            logger.debug("RESULT");
-            call.transformTo(result);
+        private static Consumer<Holder<Program>> prepend(Program program) { // this doesn't have to be in the separate program
+            return (holder) -> {
+                if (holder == null) {
+                    throw new IllegalStateException("No program holder");
+                }
+                Program chain = holder.get();
+                if (chain == null) {
+                    chain = Programs.standard();
+                }
+                holder.set(Programs.sequence(program, chain));
+            };
         }
     }
 
+    //~ Custom rules ---------------------------------------------
+
+    /**
+     * A multi-cloud {@link RelOptRule} that triggers on {@link RelNode} match with operand {@link JdbcTableScan} that has no children.
+     * <p>
+     * Rewrites {@link JdbcTableScan} into multiple {@link TableScan}s with {@link Project} on each of them,
+     * and then {@link Join}s them using 'multiid'. Finally, it {@link Project}s fields back into the original form
+     * to return semantically equivalent {@link RelNode}.
+     */
     public static class MultiCloudScanRewriterRule extends RelOptRule {
 
         public static final RelOptRule INSTANCE =
@@ -127,15 +118,27 @@ public class MultiCloudRuleManager {
                 logger.debug("RESULT");
                 multiCloudScan.explain(rw);
 
-                // TODO: Planner currently just goes through a lot of rules to transform the query BACK to original one. How to make this work?
-                // trying to set importance to 0 of the original RelNode so that Planner ignores it
-                //call.getPlanner().setImportance(call.rels[0], 0); // when importance is set to 0, pending rule calls are cancelled, and future rules will not fire.
-
-
                 call.transformTo(multiCloudScan);
                 logger.debug(call.getMetadataQuery().getCumulativeCost(multiCloudScan).toString());
-
             }
+        }
+    }
+
+    // TODO: Add more rules as new RelOptRule class HERE. For example:
+    public static class MyCustomRule extends RelOptRule {
+        public static final RelOptRule INSTANCE =
+                new MyCustomRule(RelFactories.LOGICAL_BUILDER);
+
+        public MyCustomRule(RelBuilderFactory relBuilderFactory) {
+            super(operand(AbstractRelNode.class, any()),
+                    relBuilderFactory,
+                    MyCustomRule.class.getSimpleName());
+            logger.debug("INIT custom rule: " + this.getClass().getSimpleName());
+        }
+
+        @Override
+        public void onMatch(RelOptRuleCall call) {
+            // TODO: here you add new logic
         }
     }
 }
