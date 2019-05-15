@@ -1,4 +1,4 @@
-# MultiCloud Rewriter Example
+# MultiCloud Rewriter with Example
 ## SETUP
 ### Database setup
 This project uses 3 MySQL databases on 1 server, emulating using different cloud providers. 1 database represents original table. 2 derivered databases are vertically divided by some complex rules outside of Calcite (so outside the scope of this example). 
