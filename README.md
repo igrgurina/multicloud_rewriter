@@ -33,12 +33,15 @@ CREATE TABLE `mc_db_google`.`employees` (
 );
 ```
 
+#### Notes
+Be sure to change database credentials in [model.json] to correct values for your MySQL server and databases.
+
 ### Application setup
-This project was developed using IntelliJ IDEA editor and is using Apache Maven for dependency management.
+This project was developed using an IntelliJ IDEA editor and is using an Apache Maven for dependency management.
 
-Pull the project to your disk locally and open it as Maven project in editor of your choice.
+Pull the project to your disk locally and open it as a Maven project in the editor of your choice.
 
-Maven should pull all the dependencies automatically if you're using IntelliJ IDEA. If that's the case, you're ready to go. `Application` module has `main()` method, just run it.
+Maven should pull all the dependencies automatically if you're using IntelliJ IDEA. If that's the case, you're ready to go. `Application` module has `main()` method in it, just run it.
 
 ## Additional information
 ### How it works?
@@ -46,11 +49,11 @@ Maven should pull all the dependencies automatically if you're using IntelliJ ID
 
 TODO: Add more details.
 
-
 # Disclaimer
 This CloudSec project has been funded with support from the European Union.
 
 ![alt text][EU logo]
 
+[model.json]: application/src/main/resources/model.json
 [EU logo]: http://europski-fondovi.eu/sites/default/files/logo-slike/ERDF.png "European Regional Development Fund"
-[Apache Calcite]: https://calcite.apache.org
+[Apache Calcite]: https://calcite.apache.org "Apache Calcite official website"
