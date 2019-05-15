@@ -1,6 +1,5 @@
 package org.apache.calcite.adapter.jdbc;
 
-import com.google.common.collect.ImmutableList;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptTable;
@@ -10,27 +9,61 @@ import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.externalize.RelWriterImpl;
 import org.apache.calcite.rel.logical.LogicalProject;
-import org.apache.calcite.tools.RelBuilder;
-import org.apache.calcite.tools.RelBuilderFactory;
+import org.apache.calcite.runtime.Hook;
+import org.apache.calcite.tools.*;
+import org.apache.calcite.util.Holder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
-import java.util.List;
+import java.util.function.Consumer;
 
 public class MultiCloudRuleManager {
     private static final Logger logger = LoggerFactory.getLogger(MultiCloudRuleManager.class);
 
-    public static List<RelOptRule> rules(JdbcConvention out) {
+    public static RuleSet rules(JdbcConvention out) {
         return rules(out, RelFactories.LOGICAL_BUILDER);
     }
 
-    public static List<RelOptRule> rules(JdbcConvention out, RelBuilderFactory relBuilderFactory) {
-        return ImmutableList.of(
+    public static RuleSet rules(JdbcConvention out, RelBuilderFactory relBuilderFactory) {
+        return  RuleSets.ofList(
                 //MultiCloudProjectRewriterRule.INSTANCE, //new JdbcToEnumerableConverterRule(out, relBuilderFactory)
                 MultiCloudScanRewriterRule.INSTANCE
         );
     }
+
+    //~ Hook features ---------------------------------------------
+
+    private static final Program PROGRAM = new MultiCloudProgram();
+
+    private static Hook.Closeable globalProgramClosable;
+
+    public static void addHook() {
+        if (globalProgramClosable == null) {
+            globalProgramClosable = Hook.PROGRAM.add(program());
+        }
+    }
+
+    private static Consumer<Holder<Program>> program() {
+        return prepend(PROGRAM);
+    }
+
+    private static Consumer<Holder<Program>> prepend(Program program) { // this doesn't have to be in the separate program
+        return (holder) -> {
+            if (holder == null) {
+                throw new IllegalStateException("No program holder");
+            }
+            Program chain = holder.get();
+            if (chain == null) {
+                chain = Programs.standard();
+            }
+            holder.set(Programs.sequence(program, chain));
+        };
+    }
+
+
+
+    //~ Custom rules ---------------------------------------------
 
     /**
      * An example multi-cloud {@link RelOptRule} that triggers on {@link RelNode} match with operand {@link LogicalProject} that has a child operand {@link JdbcTableScan} and none after that.

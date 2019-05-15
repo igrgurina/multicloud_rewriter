@@ -54,13 +54,10 @@ public class MultiCloudJdbcSchema extends JdbcSchema {
         public Schema create(SchemaPlus parentSchema, String name, Map<String, Object> operand) {
             logger.debug("INIT SCHEMA FROM JSON CONFIGURATION: " + name);
             JdbcSchema original = MultiCloudJdbcSchema.create(parentSchema, name, operand);
-
-            for(String s : parentSchema.getSubSchemaNames()){
-                logger.debug("SubSchema: " + s);
-
-            }
-
             MultiCloudJdbcSchema target = createFrom(original);
+
+            MultiCloudRuleManager.addHook();
+
             return target;
         }
     }
