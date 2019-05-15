@@ -20,7 +20,7 @@ public class MultiCloudProgram implements Program {
 
     @Override
     public RelNode run(RelOptPlanner planner, RelNode rel, RelTraitSet requiredOutputTraits, List<RelOptMaterialization> materializations, List<RelOptLattice> lattices) {
-        Program hep = Programs.hep(MultiCloudRuleManager.rules(null), false, null);
+        Program hep = Programs.hep(MultiCloudRuleManager.rules(), false, null);
 
         RelNode run = hep.run(planner, rel, requiredOutputTraits, materializations, lattices);
 
