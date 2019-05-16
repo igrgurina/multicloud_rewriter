@@ -11,7 +11,8 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] argv) {
-        String query = "SELECT * FROM employees";
+        //String query = "INSERT INTO `employees` (`id`, `age`,`first`,`last`) VALUES (9, 20, 'ime', 'prezime')";
+        String query = "SELECT `age` FROM employees WHERE `age` < 30";
         String dbSettingsFile = "application/src/main/resources/calcite.properties";
 
         runQuery(query, dbSettingsFile);
