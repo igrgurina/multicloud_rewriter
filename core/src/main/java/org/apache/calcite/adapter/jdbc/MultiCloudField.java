@@ -5,7 +5,7 @@ import org.apache.commons.lang3.tuple.Triple;
 /**
  * <p>Copy of the Apache immutable triple consisting of three {@code Object} elements.</p>
  *
- * Extended to fit into multicloud use case where I have to extract fully-qualified field information, and thus, the triple consists of Schema.Table.Field construct.
+ * <p>Extended to fit into multicloud use case where I have to extract fully-qualified field information, and thus, the triple consists of Schema.Table.Field construct.</p>
  *
  * @param <L> Schema
  * @param <M> Table
