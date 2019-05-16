@@ -10,14 +10,19 @@ import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.externalize.RelWriterImpl;
+import org.apache.calcite.rel.logical.LogicalProject;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.runtime.Hook;
 import org.apache.calcite.tools.*;
 import org.apache.calcite.util.Holder;
+import org.apache.calcite.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 // used in comments
 import org.apache.calcite.rel.core.*;
@@ -119,6 +124,42 @@ public class MultiCloudRuleManager {
                 call.transformTo(multiCloudScan);
                 logger.debug(call.getMetadataQuery().getCumulativeCost(multiCloudScan).toString());
             }
+        }
+    }
+
+    public static class MultiCloudDataCollector extends RelOptRule {
+
+        public static final RelOptRule INSTANCE =
+                new MultiCloudDataCollector(RelFactories.LOGICAL_BUILDER);
+
+
+        public MultiCloudDataCollector(RelBuilderFactory relBuilderFactory) {
+            super(operand(LogicalProject.class,
+                    operand(JdbcTableScan.class, none())),
+                    relBuilderFactory,
+                    MultiCloudDataCollector.class.getSimpleName());
+            logger.debug("INIT custom rule: " + this.getClass().getSimpleName());
+        }
+
+        public void onMatch(RelOptRuleCall call) {
+            RelWriter rw = new RelWriterImpl(new PrintWriter(System.out, true));
+
+            final LogicalProject project = call.rel(0);
+            project.explain(rw);
+
+            final JdbcTableScan scan = call.rel(1);
+            scan.explain(rw);
+
+            RelOptTable table = scan.getTable();
+            String schemaName = table.getQualifiedName().get(0);
+            String tableName = table.getQualifiedName().get(1);
+
+
+            List<Pair<RexNode, String>> namedProjects = project.getNamedProjects();
+            logger.debug("namedProjects for " + schemaName + "." + tableName + ": " +
+                    namedProjects.stream()
+                            .map(n -> n.getValue())
+                            .collect(Collectors.joining(", ")));
         }
     }
 }

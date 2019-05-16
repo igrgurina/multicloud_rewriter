@@ -10,6 +10,7 @@ import org.apache.calcite.tools.Programs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -20,12 +21,13 @@ public class MultiCloudProgram implements Program {
 
     @Override
     public RelNode run(RelOptPlanner planner, RelNode rel, RelTraitSet requiredOutputTraits, List<RelOptMaterialization> materializations, List<RelOptLattice> lattices) {
-        // TODO: can this be done better?
-        MultiCloudDataManager.extractFieldListFromOriginalQuery(rel);
+        // TODO: Can this be done better? Maybe RelVisitor.
+        RelNode data = Programs.hep(Collections.singleton(MultiCloudRuleManager.MultiCloudDataCollector.INSTANCE), false, null)
+                .run(planner, rel, requiredOutputTraits, materializations, lattices);
 
         Program hep = Programs.hep(MultiCloudRuleManager.rules(), false, null);
 
-        RelNode run = hep.run(planner, rel, requiredOutputTraits, materializations, lattices);
+        RelNode run = hep.run(planner, data, requiredOutputTraits, materializations, lattices);
 
         return run;
     }
