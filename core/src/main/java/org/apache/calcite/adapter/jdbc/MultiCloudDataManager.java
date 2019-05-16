@@ -1,10 +1,7 @@
 package org.apache.calcite.adapter.jdbc;
 
 import com.google.common.collect.Sets;
-import com.google.common.collect.Table;
-import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
-import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.RelWriter;
@@ -14,7 +11,6 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.util.ControlFlowException;
 import org.apache.calcite.util.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,6 +89,7 @@ public class MultiCloudDataManager {
                                 }
 
                                 // FIXME: ADD REAL HANDLERS FOR JOIN
+                                // TODO: join handler should look for tableScan, another join or project
                                 // First branch should have the query (with write ID filter conditions)
                                 new RelVisitor() {
                                     @Override
