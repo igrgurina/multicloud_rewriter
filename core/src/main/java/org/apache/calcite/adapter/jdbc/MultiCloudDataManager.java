@@ -86,7 +86,46 @@ public class MultiCloudDataManager {
                             } else if (pNode instanceof Join) {
                                 // EXPLAIN: if it's a Join, we need to start new relVisitors on each branch
                                 // TODO: add relVisitors on each child branch of JOIN
+                                Join join = (Join) pNode;
+                                if (join.getInputs().size() != 2) {
+                                    // Bail out
+                                    throw new ReturnedValue(false);
+                                }
 
+                                // FIXME: ADD REAL HANDLERS FOR JOIN
+                                // First branch should have the query (with write ID filter conditions)
+                                new RelVisitor() {
+                                    @Override
+                                    public void visit(RelNode node, int ordinal, RelNode parent) {
+                                        if (node instanceof TableScan ||
+                                                node instanceof Filter ||
+                                                node instanceof Project ||
+                                                node instanceof Join) {
+                                            // We can continue
+                                            super.visit(node, ordinal, parent);
+                                        } else if (node instanceof Aggregate) {
+                                            // We can continue
+                                            super.visit(node, ordinal, parent);
+                                        } else {
+                                            throw new ReturnedValue(false);
+                                        }
+                                    }
+                                }.go(join.getInput(0));
+                                // Second branch should only have the MV
+                                new RelVisitor() {
+                                    @Override
+                                    public void visit(RelNode node, int ordinal, RelNode parent) {
+                                        if (node instanceof TableScan) {
+                                            // We can continue
+                                            // TODO: Need to check that this is the same MV that we are rebuilding
+                                            RelOptTable table = (RelOptTable) node.getTable();
+
+                                        } else if (node instanceof Project) {
+                                            // We can continue
+                                            super.visit(node, ordinal, parent);
+                                        }
+                                    }
+                                }.go(join.getInput(1));
                             }
 
                             // EXPLAIN: otherwise, continue to next child
@@ -106,140 +145,8 @@ public class MultiCloudDataManager {
         logger.debug("RelVisitor:Done\n\t" + usedFields.stream()
                 .map(MultiCloudField::toString)
                 .collect(Collectors.joining("\n\t")));
-        return usedFields; //usedTables;
+        return usedFields;
     }
-
-    public class MapOperandToProjectRelVisitor extends RelVisitor {
-        private Project root;
-        private RelNode scan; // can be TableScan, or Join
-
-        public MapOperandToProjectRelVisitor(RelNode project) {
-            this.root = (Project) project;
-        }
-
-    }
-
-    /**
-     * This class is a helper to check whether a materialized view rebuild
-     * can be transformed from INSERT OVERWRITE to INSERT INTO.
-     * <p>
-     * We are verifying that:
-     * 1) the rewriting is rooted by legal operators (Filter and Project)
-     * before reaching a Union operator,
-     * 2) the left branch uses the MV that we are trying to rebuild and
-     * legal operators (Filter and Project), and
-     * 3) the right branch only uses legal operators (i.e., Filter, Project,
-     * Join, and TableScan)
-     */
-    public class MaterializedViewRewritingRelVisitor extends RelVisitor {
-
-        //private static final Logger LOG = LoggerFactory.getLogger(MaterializedViewRewritingRelVisitor.class);
-
-
-        final Set<MultiCloudField<String, String, String>> usedFields;
-        private boolean containsAggregate;
-        private boolean rewritingAllowed;
-
-        public MaterializedViewRewritingRelVisitor() {
-            usedFields = Sets.newLinkedHashSet();
-        }
-
-        @Override
-        public void visit(RelNode node, int ordinal, RelNode parent) {
-            if (node instanceof Aggregate) {
-                this.containsAggregate = true;
-                // Aggregate mode - it should be followed by union
-                // that we need to analyze
-                RelNode input = node.getInput(0);
-                if (input instanceof Union) {
-                    check((Union) input);
-                }
-            } else if (node instanceof Union) {
-                // Non aggregate mode - analyze union operator
-                check((Union) node);
-            } else if (node instanceof Project) {
-                // Project operator, we can continue
-                super.visit(node, ordinal, parent);
-            }
-            throw new ReturnedValue(false);
-        }
-
-        private void check(Union union) {
-            // We found the Union
-            if (union.getInputs().size() != 2) {
-                // Bail out
-                throw new ReturnedValue(false);
-            }
-            // First branch should have the query (with write ID filter conditions)
-            new RelVisitor() {
-                @Override
-                public void visit(RelNode node, int ordinal, RelNode parent) {
-                    if (node instanceof TableScan ||
-                            node instanceof Filter ||
-                            node instanceof Project ||
-                            node instanceof Join) {
-                        // We can continue
-                        super.visit(node, ordinal, parent);
-                    } else if (node instanceof Aggregate && containsAggregate) {
-                        // We can continue
-                        super.visit(node, ordinal, parent);
-                    } else {
-                        throw new ReturnedValue(false);
-                    }
-                }
-            }.go(union.getInput(0));
-            // Second branch should only have the MV
-            new RelVisitor() {
-                @Override
-                public void visit(RelNode node, int ordinal, RelNode parent) {
-                    if (node instanceof TableScan) {
-                        // We can continue
-                        // TODO: Need to check that this is the same MV that we are rebuilding
-                        RelOptTable hiveTable = (RelOptTable) node.getTable();
-                        //if (!hiveTable.getHiveTableMD().isMaterializedView()) {
-                        // If it is not a materialized view, we do not rewrite it
-                        //throw new ReturnedValue(false);
-                        if (containsAggregate
-                            //        && !AcidUtils.isFullAcidTable(hiveTable.getHiveTableMD())
-                        ) {
-                            // If it contains an aggregate and it is not a full acid table,
-                            // we do not rewrite it (we need MERGE support)
-                            throw new ReturnedValue(false);
-                        }
-                    } else if (node instanceof Project) {
-                        // We can continue
-                        super.visit(node, ordinal, parent);
-                    } else {
-                        throw new ReturnedValue(false);
-                    }
-                }
-            }.go(union.getInput(1));
-            // We pass all the checks, we can rewrite
-            throw new ReturnedValue(true);
-        }
-
-        /**
-         * Starts an iteration.
-         */
-        public RelNode go(RelNode p) {
-            try {
-                visit(p, 0, null);
-            } catch (ReturnedValue e) {
-                // Rewriting cannot be performed
-                rewritingAllowed = e.value;
-            }
-            return p;
-        }
-
-        public boolean isContainsAggregate() {
-            return containsAggregate;
-        }
-
-        public boolean isRewritingAllowed() {
-            return rewritingAllowed;
-        }
-    }
-
 
     /**
      * Exception used to interrupt a visitor walk.
