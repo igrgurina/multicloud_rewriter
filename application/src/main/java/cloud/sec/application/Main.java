@@ -12,7 +12,8 @@ public class Main {
 
     public static void main(String[] argv) {
         //String query = "INSERT INTO `employees` (`id`, `age`,`first`,`last`) VALUES (9, 20, 'ime', 'prezime')";
-        String query = "SELECT `age` FROM employees WHERE `age` < 30";
+        //String query = "SELECT `age` FROM employees WHERE `age` < 30";
+        String query = "SELECT * FROM employees WHERE `id` IN (100,2,3,4)";
         String dbSettingsFile = "application/src/main/resources/calcite.properties";
 
         runQuery(query, dbSettingsFile);
