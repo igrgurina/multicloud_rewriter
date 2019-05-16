@@ -1,6 +1,7 @@
 package org.apache.calcite.adapter.jdbc;
 
 import com.google.common.collect.Sets;
+import com.google.common.collect.Table;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
@@ -43,63 +44,59 @@ public class MultiCloudDataManager {
                     logger.debug("RelVisitor.Parent\t" + i[0] + " : " + parent.getDigest());
                 }
                 logger.debug("\t\tRelVisitor.Node\t" + i[0] + " : " + node.getDigest());
-                for(RelNode child : node.getInputs()) {
+                for (RelNode child : node.getInputs()) {
                     logger.debug("\t\t\t\tRelVisitor.Child\t" + i[0] + " : " + child.getDigest());
                 }
 
+                // TODO: get all the tables in the separate relVisitor before this one so you have that information here.
                 if (node instanceof TableScan) {
                     tables.add(node.getTable());
-                } // I got all the tables
+                } // EXPLAIN: I got all the tables
 
-                if(node instanceof Project) {
-                    projects.addAll(((Project) node).getNamedProjects());
-                } // I got all the projects
+                if (node instanceof Project) { // EXPLAIN: if it's a Project, we want to find him a matching TableScan/Join to get Schema and Table information
+                    List<Pair<RexNode, String>> namedProjects = ((Project) node).getNamedProjects();
+                    projects.addAll(namedProjects);
 
-                // can we map them now?
+                    new RelVisitor() {
 
-
-                super.visit(node, ordinal, parent);
-
-                if(node instanceof Project) {
-                    for(RelNode child : node.getInputs()) {
-                        logger.debug("\t\t\t\tRelVisitor.Child\t" + i[0] + " : " + child.getDigest());
-                    }
-
-                    // Project operator, we can continue
-                    super.visit(node, ordinal, parent);
-                }
-
-                if (node instanceof TableScan) {
-                    // EXPLAIN: first catch TableScan. Then start another visitor on its parent to catch
-                    final TableScan scan = (TableScan) node;
-                    //scan.explain(rw);
-
-                    RelOptTable table = scan.getTable();
-                    String schemaName = table.getQualifiedName().get(0);
-                    String tableName = table.getQualifiedName().get(1);
-
-                    final RelVisitor projectSearchVisitor = new RelVisitor() {
                         @Override
+                        // EXPLAIN: initial input is a child of pNode = project node. go through the tree and discover first scan, that should be the correct one
                         public void visit(RelNode pNode, int ordinal, RelNode parent) {
-                            if (pNode instanceof Project) {
-                                // FIXME: this doesn't work for PROJECT->FILTER->SCAN type queries
-                                final Project project = (Project) parent;
-                                //project.explain(rw);
+                            // FIXME: this doesn't work for PROJECT->FILTER->SCAN type queries
 
+                            if (pNode instanceof TableScan) {
+                                // EXPLAIN: if it's a Table Scan, this is most likely the correct one
 
-                                List<Pair<RexNode, String>> namedProjects = project.getNamedProjects();
+                                final TableScan scan = (TableScan) pNode;
+                                // EXPLAIN: get information about table
+                                RelOptTable table = scan.getTable();
+                                String schemaName = table.getQualifiedName().get(0);
+                                String tableName = table.getQualifiedName().get(1);
 
+                                // TODO: add check that Project->Fields are subset of TableScan->Fields to confirm this is a correct TableScan - in case of Join, this is more complicated
+                                for (RelDataTypeField relDataTypeField : table.getRowType().getFieldList()) {
+                                    relDataTypeField.getName();
+                                }
+
+                                // EXPLAIN: go through the list of fields in Project and add them to the usedFields, together with discovered TableScan schema and table names.
                                 for (Pair<RexNode, String> field : namedProjects) {
                                     String fieldName = field.getValue();
                                     usedFields.add(MultiCloudField.of(schemaName, tableName, fieldName));
                                 }
+                            } else if (pNode instanceof Join) {
+                                // EXPLAIN: if it's a Join, we need to start new relVisitors on each branch
+                                // TODO: add relVisitors on each child branch of JOIN
+
                             }
-                            super.visit(node, ordinal, parent);
+
+                            // EXPLAIN: otherwise, continue to next child
+                            super.visit(pNode, ordinal, parent);
                         }
-                    };
+                    }.go(node.getInput(0)); // EXPLAIN: Project always has single child
+                } // EXPLAIN: I got all the projects
 
+                // TODO: can we map them now?
 
-                }
                 i[0]++;
                 super.visit(node, ordinal, parent); // visit children
             }
@@ -107,11 +104,20 @@ public class MultiCloudDataManager {
         visitor.go(node);
 
         logger.debug("RelVisitor:Done\n\t" + usedFields.stream()
-                .map(n -> n.toString())
+                .map(MultiCloudField::toString)
                 .collect(Collectors.joining("\n\t")));
         return usedFields; //usedTables;
     }
 
+    public class MapOperandToProjectRelVisitor extends RelVisitor {
+        private Project root;
+        private RelNode scan; // can be TableScan, or Join
+
+        public MapOperandToProjectRelVisitor(RelNode project) {
+            this.root = (Project) project;
+        }
+
+    }
 
     /**
      * This class is a helper to check whether a materialized view rebuild
@@ -194,7 +200,7 @@ public class MultiCloudDataManager {
                         // If it is not a materialized view, we do not rewrite it
                         //throw new ReturnedValue(false);
                         if (containsAggregate
-                        //        && !AcidUtils.isFullAcidTable(hiveTable.getHiveTableMD())
+                            //        && !AcidUtils.isFullAcidTable(hiveTable.getHiveTableMD())
                         ) {
                             // If it contains an aggregate and it is not a full acid table,
                             // we do not rewrite it (we need MERGE support)

@@ -12,7 +12,7 @@ public class Main {
 
     public static void main(String[] argv) {
         String scanProjectAll = "SELECT * FROM employees";
-        String scanProjectOne = "SELECT `age` FROM employees";
+        String scanProjectOne = "SELECT `employees`.`age` FROM employees";
         String scanFilterProjectAll = "SELECT * FROM employees WHERE `id` IN (100,2,3,4)";
         String scanFilterProjectOne = "SELECT `age` FROM employees WHERE `age` < 30";
         String scanFilterProjectTwo = "SELECT `first`, `age` FROM employees WHERE `age` < 30";
@@ -22,8 +22,8 @@ public class Main {
 
         //execute(scanProjectAll, dbSettingsFile); // works
         //execute(scanProjectOne, dbSettingsFile); // works
-        execute(scanFilterProjectAll, dbSettingsFile); // FIXME: doesn't work because relNode is Project->Filter->Scan
-        //execute(scanFilterProjectOne, dbSettingsFile); // works because it trims to Filter->Project->Scan
+        //execute(scanFilterProjectAll, dbSettingsFile); // works
+        //execute(scanFilterProjectOne, dbSettingsFile); // works
         //execute(scanFilterProjectTwo, dbSettingsFile); // works
         //execute(tableModify, dbSettingsFile); // FIXME: doesn't work because we don't handle TableModify right now
     }
