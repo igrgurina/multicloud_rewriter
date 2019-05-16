@@ -58,8 +58,6 @@ public class MultiCloudDataManager {
                         @Override
                         // EXPLAIN: initial input is a child of pNode = project node. go through the tree and discover first scan, that should be the correct one
                         public void visit(RelNode pNode, int ordinal, RelNode parent) {
-                            // FIXME: this doesn't work for PROJECT->FILTER->SCAN type queries
-
                             if (pNode instanceof TableScan) {
                                 // EXPLAIN: if it's a Table Scan, this is most likely the correct one
 
