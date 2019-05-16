@@ -20,11 +20,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class MultiCloudDataManager {
-    private static final Logger logger = LoggerFactory.getLogger(MultiCloudProgram.class);
+    private static final Logger logger = LoggerFactory.getLogger(MultiCloudDataManager.class);
 
     public static Set<MultiCloudField<String, String, String>> findFields(final RelNode node) {
+        logger.debug("RelVisitor:Init");
+
         final Set<MultiCloudField<String, String, String>> usedFields = Sets.newLinkedHashSet();
 
+        // TODO: Remove if not used
         RelWriter rw = new RelWriterImpl(new PrintWriter(System.out, true));
 
         final RelVisitor visitor = new RelVisitor() {
@@ -55,7 +58,7 @@ public class MultiCloudDataManager {
         };
         visitor.go(node);
 
-        logger.debug("\n\t" + usedFields.stream()
+        logger.debug("RelVisitor:Done\n\t" + usedFields.stream()
                 .map(n -> n.toString())
                 .collect(Collectors.joining("\n\t")));
         return usedFields; //usedTables;

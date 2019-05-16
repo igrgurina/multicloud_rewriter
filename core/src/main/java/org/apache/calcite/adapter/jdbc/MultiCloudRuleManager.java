@@ -127,6 +127,7 @@ public class MultiCloudRuleManager {
         }
     }
 
+    // TODO: Remove this rule when done with RelVisitor implementation
     public static class MultiCloudDataCollector extends RelOptRule {
 
         public static final RelOptRule INSTANCE =
