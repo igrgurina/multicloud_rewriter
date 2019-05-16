@@ -34,7 +34,7 @@ CREATE TABLE `mc_db_google`.`employees` (
 ```
 
 #### Notes
-Be sure to change database credentials in [model.json] to correct values for your MySQL server and databases.
+![#ff0000](https://placehold.it/12/ff0000?text=+) Be sure to change database credentials in [model.json] to correct values for your MySQL server and databases.
 
 ### Application setup
 This project was developed using an IntelliJ IDEA editor and is using an Apache Maven for dependency management.
