@@ -12,6 +12,7 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.tools.Program;
 import org.apache.calcite.tools.Programs;
 import org.apache.calcite.util.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
  */
 public class MultiCloudProgram implements Program {
 
+    private static final Logger logger = LoggerFactory.getLogger(MultiCloudProgram.class);
     @Override
     public RelNode run(RelOptPlanner planner, RelNode rel, RelTraitSet requiredOutputTraits, List<RelOptMaterialization> materializations, List<RelOptLattice> lattices) {
         // TODO: remove this after testing; this is at the moment used for comparison to check if relVisitor behaves in the same way so that we can replace this with RelVisitor if it does.
@@ -34,7 +36,7 @@ public class MultiCloudProgram implements Program {
                 .run(planner, rel, requiredOutputTraits, materializations, lattices);
 
         // TODO: make use of this
-        findFields(data);
+        MultiCloudDataManager.findFields(data);
 
         Program hep = Programs.hep(MultiCloudRuleManager.rules(), false, null);
 
@@ -42,47 +44,5 @@ public class MultiCloudProgram implements Program {
 
         return run;
     }
-
-    private static final Logger logger = LoggerFactory.getLogger(MultiCloudRuleManager.class);
-
-    public static Set<MultiCloudField<String, String, String>> findFields(final RelNode node) {
-        final Set<MultiCloudField<String, String, String>> usedFields = Sets.newLinkedHashSet();
-
-        RelWriter rw = new RelWriterImpl(new PrintWriter(System.out, true));
-
-        final RelVisitor visitor = new RelVisitor() {
-            @Override
-            public void visit(final RelNode node, final int ordinal, final RelNode parent) {
-                if (node instanceof TableScan && parent instanceof Project) {
-
-                    final TableScan scan = (TableScan) node;
-                    //scan.explain(rw);
-
-                    RelOptTable table = scan.getTable();
-                    String schemaName = table.getQualifiedName().get(0);
-                    String tableName = table.getQualifiedName().get(1);
-
-                    // FIXME: this doesn't work for PROJECT->FILTER->SCAN type queries that are very common
-                    final Project project = (Project) parent;
-                    //project.explain(rw);
-
-                    List<Pair<RexNode, String>> namedProjects = project.getNamedProjects();
-
-                    for (Pair<RexNode, String> field : namedProjects) {
-                        String fieldName = field.getValue();
-                        usedFields.add(MultiCloudField.of(schemaName, tableName, fieldName));
-                    }
-                }
-                super.visit(node, ordinal, parent);
-            }
-        };
-        visitor.go(node);
-
-        logger.debug("\n\t" + usedFields.stream()
-                .map(n -> n.toString())
-                .collect(Collectors.joining("\n\t")));
-        return usedFields; //usedTables;
-    }
 }
-
 
