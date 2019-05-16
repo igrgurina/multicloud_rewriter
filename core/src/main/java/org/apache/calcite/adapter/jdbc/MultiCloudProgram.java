@@ -78,9 +78,9 @@ public class MultiCloudProgram implements Program {
         };
         visitor.go(node);
 
-        logger.debug(usedFields.stream()
-                .map(n -> n.schema + "." + n.table + "." + n.field)
-                .collect(Collectors.joining("\n")));
+        logger.debug("\n\t" + usedFields.stream()
+                .map(n -> n.toString())
+                .collect(Collectors.joining("\n\t")));
         return usedFields; //usedTables;
     }
 }

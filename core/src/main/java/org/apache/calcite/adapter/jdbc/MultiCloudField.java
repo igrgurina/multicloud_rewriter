@@ -103,4 +103,9 @@ public final class MultiCloudField<L, M, R> extends Triple<L, M, R> {
     public R getRight() {
         return field;
     }
+
+    @Override
+    public String toString() {
+        return this.schema + "." + this.table + "." + this.field;
+    }
 }
