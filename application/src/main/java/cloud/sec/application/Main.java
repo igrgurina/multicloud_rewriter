@@ -24,8 +24,8 @@ public class Main {
         String dbSettingsFile = "application/src/main/resources/calcite.properties";
 
         //execute(scanProjectAll, dbSettingsFile); // works
-        execute(scanJoinFilterProjectAll, dbSettingsFile);
-        //execute(scanProjectOne, dbSettingsFile); // works
+        //execute(scanJoinFilterProjectAll, dbSettingsFile);
+        execute(scanProjectOne, dbSettingsFile); // works
         //execute(scanFilterProjectAll, dbSettingsFile); // works
         //execute(scanFilterProjectOne, dbSettingsFile); // works
         //execute(scanFilterProjectTwo, dbSettingsFile); // works
