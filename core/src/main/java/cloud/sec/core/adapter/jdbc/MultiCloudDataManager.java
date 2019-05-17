@@ -39,7 +39,22 @@ public class MultiCloudDataManager {
         Map<RelOptTable, Set<String>> tables = new HashMap<>();
         Set<String> projects = new HashSet<>();
 
+        final boolean[] isUpdate = {false};
+
         new RelVisitor() {
+            /**
+             * Starts an iteration.
+             */
+            public RelNode go(RelNode p) {
+                try {
+                    visit(p, 0, null);
+                } catch (ReturnedValue e) {
+                    // Rewriting cannot be performed
+                    isUpdate[0] = e.value;
+                }
+                return p;
+            }
+
             @Override
             public void visit(final RelNode node, final int ordinal, final RelNode parent) {
                 debug(node, parent);
@@ -61,7 +76,7 @@ public class MultiCloudDataManager {
 
                     //TODO: if it's TableModify INSERT, insert all table fields fields right here
                     if (operation == TableModify.Operation.INSERT) {
-                        fieldNames = getFieldNames(tableModify); // we don't have to use tableModify.deriveRowType().getFieldList()
+                        fieldNames = getFieldNames(tableModify.deriveRowType().getFieldList());
                     }
 
                     //TODO: if it's UPDATE, check operation=[UPDATE], updateColumnList=[[age]]
@@ -72,6 +87,10 @@ public class MultiCloudDataManager {
                     // TODO: handle mapping for INSERT and UPDATE here, since they're special
                     for (String field : fieldNames) {
                         usedFields.add(MultiCloudField.of(schemaName, tableName, field));
+                    }
+
+                    if (operation == TableModify.Operation.UPDATE) {
+                        throw new ReturnedValue(true);
                     }
                 }
 
@@ -84,14 +103,16 @@ public class MultiCloudDataManager {
         }.go(node);
 
         // EXPLAIN: can we map (most of) them now? Yes, we can!
-        for (String projectFieldName : projects) {
-            tables.forEach((table, fields) -> {
-                if (fields.contains(projectFieldName)) {
-                    String schemaName = table.getQualifiedName().get(0);
-                    String tableName = table.getQualifiedName().get(1);
-                    usedFields.add(MultiCloudField.of(schemaName, tableName, projectFieldName));
-                }
-            });
+        if (!isUpdate[0]) { // this is a part about "most of them"
+            for (String projectFieldName : projects) {
+                tables.forEach((table, fields) -> {
+                    if (fields.contains(projectFieldName)) {
+                        String schemaName = table.getQualifiedName().get(0);
+                        String tableName = table.getQualifiedName().get(1);
+                        usedFields.add(MultiCloudField.of(schemaName, tableName, projectFieldName));
+                    }
+                });
+            }
         }
 
         logger.debug("RelVisitor:Done\n\t" + usedFields.stream()
@@ -125,5 +146,16 @@ public class MultiCloudDataManager {
         fields.forEach(field -> names.add(field.getName()));
 
         return names;
+    }
+
+    /**
+     * Exception used to interrupt a visitor walk.
+     */
+    private static class ReturnedValue extends ControlFlowException {
+        private final boolean value;
+
+        public ReturnedValue(boolean value) {
+            this.value = value;
+        }
     }
 }

@@ -33,10 +33,10 @@ public class Main {
         //execute(scanFilterProjectOne, dbSettingsFile); // works
         //execute(scanFilterProjectTwo, dbSettingsFile); // works
 
-        execute(tableModifyInsert, dbSettingsFile); // FIXME: doesn't work because we don't handle TableModify right now -- should show entire table
-        //execute(tableModifyUpdate, dbSettingsFile); // works - shows entire table
-        execute(tableModifyUpdatePartial, dbSettingsFile); // FIXME: doesn't work we don't handle operation=[UPDATE], updateColumnList=[[age]]
-        //execute(tableModifyDelete, dbSettingsFile); // works - shows entire table
+        execute(tableModifyInsert, dbSettingsFile); // FIXME: doesn't work because we don't handle TableModify right now -- should show entire table -- currently shows mc_db.employees.ROWCOUNT
+        execute(tableModifyUpdate, dbSettingsFile); // works - shows entire table
+        execute(tableModifyUpdatePartial, dbSettingsFile); // works - but, using exception to interrupt RelVisitor
+        execute(tableModifyDelete, dbSettingsFile); // works - shows entire table
     }
 
     private static void execute(String query, String dbSettingsFile) {
