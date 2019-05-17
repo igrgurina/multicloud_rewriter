@@ -5,7 +5,7 @@
     {
       "name": "mc_db_amazon",
       "type": "custom",
-      "factory" : "org.apache.calcite.adapter.jdbc.MultiCloudJdbcSchema$Factory",
+      "factory" : "cloud.sec.core.adapter.jdbc.MultiCloudJdbcSchema$Factory",
       "operand": {
         "jdbcUser": "root",
         "jdbcPassword": "toor",
@@ -16,7 +16,7 @@
     {
       "name": "mc_db_google",
       "type": "custom",
-      "factory" : "org.apache.calcite.adapter.jdbc.MultiCloudJdbcSchema$Factory",
+      "factory" : "cloud.sec.core.adapter.jdbc.MultiCloudJdbcSchema$Factory",
       "operand": {
         "jdbcUser": "root",
         "jdbcPassword": "toor",
@@ -27,7 +27,7 @@
     {
       "name": "mc_db",
       "type": "custom",
-      "factory" : "org.apache.calcite.adapter.jdbc.MultiCloudJdbcSchema$Factory",
+      "factory" : "cloud.sec.core.adapter.jdbc.MultiCloudJdbcSchema$Factory",
       "operand": {
         "jdbcUser": "root",
         "jdbcPassword": "toor",

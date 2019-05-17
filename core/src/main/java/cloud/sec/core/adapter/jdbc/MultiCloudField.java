@@ -1,9 +1,6 @@
-package org.apache.calcite.adapter.jdbc;
+package cloud.sec.core.adapter.jdbc;
 
-import org.apache.calcite.plan.RelOptTable;
 import org.apache.commons.lang3.tuple.Triple;
-
-import java.util.List;
 
 /**
  * <p>Copy of the Apache immutable triple consisting of three {@code Object} elements.</p>

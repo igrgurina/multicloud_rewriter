@@ -1,7 +1,6 @@
-package org.apache.calcite.adapter.jdbc;
+package cloud.sec.core.adapter.jdbc;
 
 import com.google.common.collect.Sets;
-import com.google.common.collect.Table;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;

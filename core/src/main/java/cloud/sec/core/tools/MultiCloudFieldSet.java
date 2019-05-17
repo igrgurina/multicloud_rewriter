@@ -1,6 +1,6 @@
-package org.apache.calcite.tools;
+package cloud.sec.core.tools;
 
-import org.apache.calcite.adapter.jdbc.MultiCloudField;
+import cloud.sec.core.adapter.jdbc.MultiCloudField;
 
 // following the RuleSet principle
 public interface MultiCloudFieldSet extends Iterable<MultiCloudField>{
