@@ -15,13 +15,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class MultiCloudDataManager {
     private static final Logger logger = LoggerFactory.getLogger(MultiCloudDataManager.class);
+    private static final RelWriter rw = new RelWriterImpl(new PrintWriter(System.out, true));
 
     public static Set<RelOptTable> findTables(final RelNode node) {
         final Set<RelOptTable> tables = Sets.newLinkedHashSet();
@@ -40,7 +39,8 @@ public class MultiCloudDataManager {
         return tables;
     }
 
-    // TODO: make this return something...
+    // FIXME: make this return something...
+    // TODO: maybe I don't even need this.
     public static void handle(Project project) {
         new RelVisitor() {
 
@@ -119,43 +119,52 @@ public class MultiCloudDataManager {
     }
 
     public static MultiCloudFieldSet findFields(final RelNode node) {
-        //logger.debug("RelVisitor:Init");
+        logger.debug("RelVisitor:Init");
+
+        //EXPLAIN: I need list of tables and list of projects.
+        // From that I can get table fields, table schema and table name,
+        // and project fields.
+        // Then, for(project) {
+        //          for(table) {
+        //              if(table.fields.contains(project.field)) { -- match
+        //                  do stuff.
 
         final Set<MultiCloudField<String, String, String>> usedFields = Sets.newLinkedHashSet();
 
-        Set<RelOptTable> tables = Sets.newLinkedHashSet();
-        List<RelDataTypeField> projects = new ArrayList<>();
-        // TODO: Remove if not used
-        RelWriter rw = new RelWriterImpl(new PrintWriter(System.out, true));
-        final int[] i = {0}; // EXPLAIN: Counter for the logger
+        Map<RelOptTable, Set<String>> tables = new HashMap<>();
+        Set<String> projects = new HashSet<>();
 
-        tables.addAll(findTables(node));// EXPLAIN: Get all the tables beforehand
-
-        final RelVisitor visitor = new RelVisitor() {
+        new RelVisitor() {
             @Override
             public void visit(final RelNode node, final int ordinal, final RelNode parent) {
-                if (parent != null) {
-                    logger.debug("RelVisitor.Parent\t" + i[0] + " : " + parent.getDigest());
-                }
-                logger.debug("\t\tRelVisitor.Node\t" + i[0] + " : " + node.getDigest());
-                for (RelNode child : node.getInputs()) {
-                    logger.debug("\t\t\t\tRelVisitor.Child\t" + i[0] + " : " + child.getDigest());
+                debug(node, parent);
+
+                if (node instanceof TableScan || node instanceof TableModify) {
+                    tables.put(node.getTable(), getFieldNames(node));
                 }
 
-                if (node instanceof Project) { // EXPLAIN: if it's a Project, we want to find him a matching TableScan/Join to get Schema and Table information
-                    projects.addAll(getFields(node));
+                if (node instanceof Project) { // EXPLAIN: if it's a Project, we want to find him a matching TableScan OR Join->TableScans to get Schema and Table information
+                    projects.addAll(getFieldNames(node));
 
-                    handle((Project) node);
+                    //EXPLAIN: lets ignore Project handler for now, maybe we can get information we need without it
+                    // handle((Project) node);
 
-                } // EXPLAIN: I got all the projects
+                }
 
-                // TODO: can we map them now?
-
-                i[0]++;
                 super.visit(node, ordinal, parent); // visit children
             }
-        };
-        visitor.go(node);
+        }.go(node);
+
+        // TODO: can we map them now?
+        for (RelDataTypeField field : projects) {
+            tables.forEach((table, fields) -> {
+                if(fields.contains(field)) {
+                    String schemaName = table.getQualifiedName().get(0);
+                    String tableName = table.getQualifiedName().get(1);
+                    usedFields.add(MultiCloudField.of(schemaName, tableName, field.getName()));
+                }
+            });
+        }
 
         logger.debug("RelVisitor:Done\n\t" + usedFields.stream()
                 .map(MultiCloudField::toString)
@@ -164,8 +173,26 @@ public class MultiCloudDataManager {
         return MultiCloudFieldSets.ofList(usedFields);
     }
 
-    private static List<RelDataTypeField> getFields(RelNode node){
+    private static void debug(final RelNode node, final RelNode parent) {
+        if (parent != null) {
+            logger.debug("RelVisitor.Parent\t" + " : " + parent.getDigest());
+        }
+        logger.debug("\t\tRelVisitor.Node\t" + " : " + node.getDigest());
+        for (RelNode child : node.getInputs()) {
+            logger.debug("\t\t\t\tRelVisitor.Child\t" + " : " + child.getDigest());
+        }
+    }
+
+    private static List<RelDataTypeField> getFields(RelNode node) {
         return node.getRowType().getFieldList();
+    }
+
+    private static Set<String> getFieldNames(RelNode node) {
+        HashSet<String> names = new HashSet<>();
+
+        getFields(node).forEach(field -> names.add(field.getName()));
+
+        return names;
     }
 
     /**
