@@ -148,20 +148,19 @@ public class MultiCloudDataManager {
 
                     //EXPLAIN: lets ignore Project handler for now, maybe we can get information we need without it
                     // handle((Project) node);
-
                 }
 
                 super.visit(node, ordinal, parent); // visit children
             }
         }.go(node);
 
-        // TODO: can we map them now?
-        for (RelDataTypeField field : projects) {
+        // TODO: can we map them now? Yes, we can!
+        for (String projectFieldName : projects) {
             tables.forEach((table, fields) -> {
-                if(fields.contains(field)) {
+                if(fields.contains(projectFieldName)) {
                     String schemaName = table.getQualifiedName().get(0);
                     String tableName = table.getQualifiedName().get(1);
-                    usedFields.add(MultiCloudField.of(schemaName, tableName, field.getName()));
+                    usedFields.add(MultiCloudField.of(schemaName, tableName, projectFieldName));
                 }
             });
         }
