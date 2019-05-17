@@ -11,7 +11,10 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] argv) {
-        String scanProjectAll = "SELECT * FROM employees";
+        // EXPLAIN: I disabled multicloud rules since I don't need them
+
+        String scanProjectAll = "SELECT * FROM cities";
+        String scanJoinFilterProjectAll = "SELECT * FROM cities, employees WHERE employees.city_id = cities.id";
         String scanProjectOne = "SELECT `employees`.`age` FROM employees";
         String scanFilterProjectAll = "SELECT * FROM employees WHERE `id` IN (100,2,3,4)";
         String scanFilterProjectOne = "SELECT `age` FROM employees WHERE `age` < 30";
@@ -21,6 +24,7 @@ public class Main {
         String dbSettingsFile = "application/src/main/resources/calcite.properties";
 
         //execute(scanProjectAll, dbSettingsFile); // works
+        execute(scanJoinFilterProjectAll, dbSettingsFile);
         //execute(scanProjectOne, dbSettingsFile); // works
         //execute(scanFilterProjectAll, dbSettingsFile); // works
         //execute(scanFilterProjectOne, dbSettingsFile); // works

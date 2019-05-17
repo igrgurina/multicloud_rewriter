@@ -15,9 +15,22 @@ Then you have to create 3 tables, as shown below.
 CREATE TABLE `mc_db`.`employees` (
   `id` int(11) NOT NULL,
   `first` varchar(255) DEFAULT NULL,
-  `last` varchar(255) DEFAULT NULL
+  `last` varchar(255) DEFAULT NULL,
+  `city_id` INT(11) NULL,
   `age` int(3) NOT NULL,
-);
+  PRIMARY KEY (`id`));
+
+CREATE TABLE `mc_db`.`cities` (
+  `id` INT NOT NULL,
+  `name` VARCHAR(45) NULL,
+  PRIMARY KEY (`id`));
+
+ALTER TABLE `mc_db`.`employees` 
+ADD CONSTRAINT `cityId`
+  FOREIGN KEY (`city_id`)
+  REFERENCES `mc_db`.`cities` (`id`)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE;
 
 CREATE TABLE `mc_db_amazon`.`employees` (
   `multiid` int(11) NOT NULL,

@@ -32,7 +32,7 @@ public class MultiCloudRuleManager {
 
     public static RuleSet rules() {
         return RuleSets.ofList(
-                MultiCloudScanRewriterRule.INSTANCE
+                //MultiCloudScanRewriterRule.INSTANCE
         );
     }
 

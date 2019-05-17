@@ -159,6 +159,7 @@ public class MultiCloudDataManager {
         return usedFields;
     }
 
+
     /**
      * Exception used to interrupt a visitor walk.
      */
