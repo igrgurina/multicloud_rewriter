@@ -11,14 +11,24 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] argv) {
-        //String query = "INSERT INTO `employees` (`id`, `age`,`first`,`last`) VALUES (9, 20, 'ime', 'prezime')";
-        String query = "SELECT `age` FROM employees WHERE `age` < 30";
+        String scanProjectAll = "SELECT * FROM employees";
+        String scanProjectOne = "SELECT `employees`.`age` FROM employees";
+        String scanFilterProjectAll = "SELECT * FROM employees WHERE `id` IN (100,2,3,4)";
+        String scanFilterProjectOne = "SELECT `age` FROM employees WHERE `age` < 30";
+        String scanFilterProjectTwo = "SELECT `first`, `age` FROM employees WHERE `age` < 30";
+        String tableModify = "INSERT INTO `employees` (`id`, `age`,`first`,`last`) VALUES (9, 20, 'ime', 'prezime')";
+
         String dbSettingsFile = "application/src/main/resources/calcite.properties";
 
-        runQuery(query, dbSettingsFile);
+        //execute(scanProjectAll, dbSettingsFile); // works
+        //execute(scanProjectOne, dbSettingsFile); // works
+        //execute(scanFilterProjectAll, dbSettingsFile); // works
+        //execute(scanFilterProjectOne, dbSettingsFile); // works
+        //execute(scanFilterProjectTwo, dbSettingsFile); // works
+        //execute(tableModify, dbSettingsFile); // FIXME: doesn't work because we don't handle TableModify right now
     }
 
-    private static void runQuery(String query, String dbSettingsFile) {
+    private static void execute(String query, String dbSettingsFile) {
         try {
             FileReader dbSettingsReader = new FileReader(dbSettingsFile);
             Properties dbSettings = new Properties();
@@ -28,22 +38,38 @@ public class Main {
             Connection connection = DriverManager.getConnection(dbSettings.getProperty("url"), dbSettings);
 
             Statement statement = connection.createStatement();
-            ResultSet results = statement.executeQuery(query);
+            boolean isQuery = statement.execute(query);
 
-            ResultSetMetaData meta = results.getMetaData();
-            int noOfColumns = meta.getColumnCount();
-            while (results.next()) {
-                for (int i = 1; i <= noOfColumns; i++) {
-                    String columnName = meta.getColumnName(i);
-                    Object columnValue = results.getObject(columnName);
-                    logger.info(columnName + " = " + String.format("%-15s", String.valueOf(columnValue)) + "|");
-                }
+            if (isQuery) {
+                handleQuery(statement);
+            } else {
+                handleDML(statement);
             }
-            results.close();
+
             statement.close();
             connection.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private static void handleQuery(Statement statement) throws Exception {
+        ResultSet results = statement.getResultSet();
+
+        ResultSetMetaData meta = results.getMetaData();
+        int noOfColumns = meta.getColumnCount();
+        while (results.next()) {
+            for (int i = 1; i <= noOfColumns; i++) {
+                String columnName = meta.getColumnName(i);
+                Object columnValue = results.getObject(columnName);
+                logger.info(columnName + " = " + String.format("%-15s", String.valueOf(columnValue)) + "|");
+            }
+        }
+        results.close();
+    }
+
+    private static void handleDML(Statement statement) throws Exception {
+        int result = statement.getUpdateCount();
+        logger.info("RESULT: " + result + " rows affected");
     }
 }
