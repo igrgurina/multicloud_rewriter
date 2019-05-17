@@ -1,5 +1,6 @@
 package cloud.sec.core.adapter.jdbc;
 
+import cloud.sec.core.tools.MultiCloudFieldSet;
 import org.apache.calcite.plan.RelOptLattice;
 import org.apache.calcite.plan.RelOptMaterialization;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -22,7 +23,7 @@ public class MultiCloudProgram implements Program {
     @Override
     public RelNode run(RelOptPlanner planner, RelNode rel, RelTraitSet requiredOutputTraits, List<RelOptMaterialization> materializations, List<RelOptLattice> lattices) {
         // TODO: make use of this
-        MultiCloudDataManager.findFields(rel);
+        MultiCloudFieldSet fields = MultiCloudDataManager.findFields(rel);
 
         return rel;
     }

@@ -44,11 +44,35 @@ public class MultiCloudDataManager {
             public void visit(final RelNode node, final int ordinal, final RelNode parent) {
                 debug(node, parent);
 
-                if (node instanceof TableScan || node instanceof TableModify) {
+                if (node instanceof TableScan) {
                     tables.put(node.getTable(), getFieldNames(node));
+                }
+
+                if (node instanceof TableModify) {
+                    TableModify tableModify = (TableModify) node;
+                    TableModify.Operation operation = tableModify.getOperation();
+
+                    RelOptTable table = node.getTable();
+                    String schemaName = table.getQualifiedName().get(0);
+                    String tableName = table.getQualifiedName().get(1);
+                    Set<String> fieldNames = new HashSet<>();
+
+                    // if it's TableModify DELETE, it does its own thing with Project and Scan, so we're ok. We can handle that.
+
                     //TODO: if it's TableModify INSERT, insert all table fields fields right here
+                    if (operation == TableModify.Operation.INSERT) {
+                        fieldNames = getFieldNames(tableModify); // we don't have to use tableModify.deriveRowType().getFieldList()
+                    }
 
                     //TODO: if it's UPDATE, check operation=[UPDATE], updateColumnList=[[age]]
+                    if (operation == TableModify.Operation.UPDATE) {
+                        fieldNames = new HashSet<>(tableModify.getUpdateColumnList());
+                    }
+
+                    // TODO: handle mapping for INSERT and UPDATE here, since they're special
+                    for (String field : fieldNames) {
+                        usedFields.add(MultiCloudField.of(schemaName, tableName, field));
+                    }
                 }
 
                 if (node instanceof Project) {
@@ -59,10 +83,10 @@ public class MultiCloudDataManager {
             }
         }.go(node);
 
-        // EXPLAIN: can we map them now? Yes, we can!
+        // EXPLAIN: can we map (most of) them now? Yes, we can!
         for (String projectFieldName : projects) {
             tables.forEach((table, fields) -> {
-                if(fields.contains(projectFieldName)) {
+                if (fields.contains(projectFieldName)) {
                     String schemaName = table.getQualifiedName().get(0);
                     String tableName = table.getQualifiedName().get(1);
                     usedFields.add(MultiCloudField.of(schemaName, tableName, projectFieldName));
@@ -92,9 +116,13 @@ public class MultiCloudDataManager {
     }
 
     private static Set<String> getFieldNames(RelNode node) {
+        return getFieldNames(getFields(node));
+    }
+
+    private static Set<String> getFieldNames(List<RelDataTypeField> fields) {
         HashSet<String> names = new HashSet<>();
 
-        getFields(node).forEach(field -> names.add(field.getName()));
+        fields.forEach(field -> names.add(field.getName()));
 
         return names;
     }
