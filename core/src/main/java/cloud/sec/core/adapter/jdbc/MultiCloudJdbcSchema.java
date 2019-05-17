@@ -1,5 +1,7 @@
-package org.apache.calcite.adapter.jdbc;
+package cloud.sec.core.adapter.jdbc;
 
+import org.apache.calcite.adapter.jdbc.JdbcConvention;
+import org.apache.calcite.adapter.jdbc.JdbcSchema;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaFactory;
 import org.apache.calcite.schema.SchemaPlus;

@@ -1,14 +1,12 @@
-package org.apache.calcite.adapter.jdbc;
+package cloud.sec.core.adapter.jdbc;
 
+import org.apache.calcite.adapter.jdbc.JdbcTableScan;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.plan.RelOptTable;
-import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
-import org.apache.calcite.rel.core.JoinRelType;
-import org.apache.calcite.rel.core.RelFactories;
+import org.apache.calcite.rel.core.*;
 import org.apache.calcite.rel.externalize.RelWriterImpl;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rex.RexNode;
@@ -25,7 +23,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 // used in comments
-import org.apache.calcite.rel.core.*;
 
 public class MultiCloudRuleManager {
     private static final Logger logger = LoggerFactory.getLogger(MultiCloudRuleManager.class);

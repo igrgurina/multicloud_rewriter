@@ -1,4 +1,4 @@
-package org.apache.calcite.adapter.jdbc;
+package cloud.sec.core.adapter.jdbc;
 
 import com.google.common.collect.Sets;
 import org.apache.calcite.plan.RelOptTable;
@@ -23,6 +23,23 @@ import java.util.stream.Collectors;
 public class MultiCloudDataManager {
     private static final Logger logger = LoggerFactory.getLogger(MultiCloudDataManager.class);
 
+    public static Set<RelOptTable> findTables(final RelNode node) {
+        final Set<RelOptTable> tables = Sets.newLinkedHashSet();
+
+        // tableVisitor
+        new RelVisitor() {
+            @Override
+            public void visit(RelNode node, int ordinal, RelNode parent) {
+                if (node instanceof TableScan || node instanceof TableModify) {
+                    tables.add(node.getTable());
+                }
+                super.visit(node, ordinal, parent);
+            }
+        }.go(node);
+
+        return tables;
+    }
+
     public static Set<MultiCloudField<String, String, String>> findFields(final RelNode node) {
         //logger.debug("RelVisitor:Init");
 
@@ -33,6 +50,9 @@ public class MultiCloudDataManager {
         // TODO: Remove if not used
         RelWriter rw = new RelWriterImpl(new PrintWriter(System.out, true));
         final int[] i = {0};
+
+        tables.addAll(findTables(node));// EXPLAIN: Get all the tables beforehand
+
         final RelVisitor visitor = new RelVisitor() {
             @Override
             public void visit(final RelNode node, final int ordinal, final RelNode parent) {
@@ -43,11 +63,6 @@ public class MultiCloudDataManager {
                 for (RelNode child : node.getInputs()) {
                     logger.debug("\t\t\t\tRelVisitor.Child\t" + i[0] + " : " + child.getDigest());
                 }
-
-                // TODO: get all the tables in the separate relVisitor before this one so you have that information here.
-                if (node instanceof TableScan) {
-                    tables.add(node.getTable());
-                } // EXPLAIN: I got all the tables
 
                 if (node instanceof Project) { // EXPLAIN: if it's a Project, we want to find him a matching TableScan/Join to get Schema and Table information
                     List<Pair<RexNode, String>> namedProjects = ((Project) node).getNamedProjects();
@@ -142,6 +157,7 @@ public class MultiCloudDataManager {
                 .collect(Collectors.joining("\n\t")));
         return usedFields;
     }
+
 
     /**
      * Exception used to interrupt a visitor walk.

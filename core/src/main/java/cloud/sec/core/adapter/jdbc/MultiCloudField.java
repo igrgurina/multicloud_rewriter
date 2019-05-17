@@ -1,4 +1,4 @@
-package org.apache.calcite.adapter.jdbc;
+package cloud.sec.core.adapter.jdbc;
 
 import org.apache.commons.lang3.tuple.Triple;
 
@@ -10,7 +10,6 @@ import org.apache.commons.lang3.tuple.Triple;
  * @param <L> Schema
  * @param <M> Table
  * @param <R> Field
- *
  * @since 3.2
  */
 public final class MultiCloudField<L, M, R> extends Triple<L, M, R> {
@@ -22,7 +21,9 @@ public final class MultiCloudField<L, M, R> extends Triple<L, M, R> {
     @SuppressWarnings("rawtypes")
     private static final MultiCloudField NULL = of(null, null, null);
 
-    /** Serialization version */
+    /**
+     * Serialization version
+     */
     private static final long serialVersionUID = 1L;
 
     /**
@@ -39,11 +40,17 @@ public final class MultiCloudField<L, M, R> extends Triple<L, M, R> {
         return NULL;
     }
 
-    /** Left object */
+    /**
+     * Left object
+     */
     public final L schema;
-    /** Middle object */
+    /**
+     * Middle object
+     */
     public final M table;
-    /** Right object */
+    /**
+     * Right object
+     */
     public final R field;
 
     /**
@@ -52,10 +59,10 @@ public final class MultiCloudField<L, M, R> extends Triple<L, M, R> {
      * <p>This factory allows the triple to be created using inference to
      * obtain the generic types.</p>
      *
-     * @param <L> the schema element type
-     * @param <M> the table element type
-     * @param <R> the field element type
-     * @param schema  the schema element, may be null
+     * @param <L>    the schema element type
+     * @param <M>    the table element type
+     * @param <R>    the field element type
+     * @param schema the schema element, may be null
      * @param table  the table element, may be null
      * @param field  the field element, may be null
      * @return a triple formed from the three parameters, not null
@@ -68,8 +75,8 @@ public final class MultiCloudField<L, M, R> extends Triple<L, M, R> {
     /**
      * Create a new triple instance.
      *
-     * @param schema  the schema value, may be null
-     * @param table the table value, may be null
+     * @param schema the schema value, may be null
+     * @param table  the table value, may be null
      * @param field  the field value, may be null
      */
     public MultiCloudField(final L schema, final M table, final R field) {
@@ -80,6 +87,7 @@ public final class MultiCloudField<L, M, R> extends Triple<L, M, R> {
     }
 
     //-----------------------------------------------------------------------
+
     /**
      * Returns schema.
      */
@@ -109,3 +117,4 @@ public final class MultiCloudField<L, M, R> extends Triple<L, M, R> {
         return this.schema + "." + this.table + "." + this.field;
     }
 }
+
