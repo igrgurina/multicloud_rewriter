@@ -1,5 +1,7 @@
 package cloud.sec.core.adapter.jdbc;
 
+import cloud.sec.core.tools.MultiCloudFieldSet;
+import cloud.sec.core.tools.MultiCloudFieldSets;
 import com.google.common.collect.Sets;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelNode;
@@ -8,156 +10,144 @@ import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.*;
 import org.apache.calcite.rel.externalize.RelWriterImpl;
 import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.util.ControlFlowException;
-import org.apache.calcite.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class MultiCloudDataManager {
     private static final Logger logger = LoggerFactory.getLogger(MultiCloudDataManager.class);
+    private static final RelWriter rw = new RelWriterImpl(new PrintWriter(System.out, true));
 
-    public static Set<RelOptTable> findTables(final RelNode node) {
-        final Set<RelOptTable> tables = Sets.newLinkedHashSet();
 
-        // tableVisitor
+    public static MultiCloudFieldSet findFields(final RelNode node) {
+        logger.debug("RelVisitor:Init");
+
+        //EXPLAIN: I need list of tables and list of projects.
+        // From that I can get table fields, table schema and table name,
+        // and project fields.
+        // Then, for(project) {
+        //          for(table) {
+        //              if(table.fields.contains(project.field)) { -- match
+        //                  do stuff.
+
+        final Set<MultiCloudField<String, String, String>> usedFields = new HashSet<>();
+
+        Map<RelOptTable, Set<String>> tables = new HashMap<>();
+        Set<String> projects = new HashSet<>();
+
+        final boolean[] isUpdate = {false};
+
         new RelVisitor() {
-            @Override
-            public void visit(RelNode node, int ordinal, RelNode parent) {
-                if (node instanceof TableScan || node instanceof TableModify) {
-                    tables.add(node.getTable());
+            /**
+             * Starts an iteration.
+             */
+            public RelNode go(RelNode p) {
+                try {
+                    visit(p, 0, null);
+                } catch (ReturnedValue e) {
+                    // Rewriting cannot be performed
+                    isUpdate[0] = e.value;
                 }
-                super.visit(node, ordinal, parent);
+                return p;
+            }
+
+            @Override
+            public void visit(final RelNode node, final int ordinal, final RelNode parent) {
+                debug(node, parent);
+
+                if (node instanceof TableScan) {
+                    tables.put(node.getTable(), getFieldNames(node));
+                }
+
+                if (node instanceof TableModify) {
+                    TableModify tableModify = (TableModify) node;
+                    TableModify.Operation operation = tableModify.getOperation();
+
+                    RelOptTable table = node.getTable();
+                    String schemaName = table.getQualifiedName().get(0);
+                    String tableName = table.getQualifiedName().get(1);
+                    Set<String> fieldNames = new HashSet<>();
+
+                    // if it's TableModify DELETE, it does its own thing with Project and Scan, so we're ok. We can handle that.
+
+                    //TODO: if it's TableModify INSERT, insert all table fields fields right here
+                    if (operation == TableModify.Operation.INSERT) {
+                        fieldNames = getFieldNames(tableModify.getTable().getRowType().getFieldList());
+                    }
+
+                    //TODO: if it's UPDATE, check operation=[UPDATE], updateColumnList=[[age]]
+                    if (operation == TableModify.Operation.UPDATE) {
+                        fieldNames = new HashSet<>(tableModify.getUpdateColumnList());
+                    }
+
+                    // TODO: handle mapping for INSERT and UPDATE here, since they're special
+                    // this doesn't trigger for DELETE because fieldNames are empty
+                    for (String field : fieldNames) {
+                        usedFields.add(MultiCloudField.of(schemaName, tableName, field));
+                    }
+
+                    if (operation == TableModify.Operation.UPDATE) {
+                        throw new ReturnedValue(true);
+                    }
+                }
+
+                if (node instanceof Project) {
+                    projects.addAll(getFieldNames(node));
+                }
+
+                super.visit(node, ordinal, parent); // visit children
             }
         }.go(node);
 
-        return tables;
-    }
-
-    public static Set<MultiCloudField<String, String, String>> findFields(final RelNode node) {
-        //logger.debug("RelVisitor:Init");
-
-        final Set<MultiCloudField<String, String, String>> usedFields = Sets.newLinkedHashSet();
-
-        Set<RelOptTable> tables = Sets.newLinkedHashSet();
-        List<Pair<RexNode, String>> projects = new ArrayList<>();
-        // TODO: Remove if not used
-        RelWriter rw = new RelWriterImpl(new PrintWriter(System.out, true));
-        final int[] i = {0};
-
-        tables.addAll(findTables(node));// EXPLAIN: Get all the tables beforehand
-
-        final RelVisitor visitor = new RelVisitor() {
-            @Override
-            public void visit(final RelNode node, final int ordinal, final RelNode parent) {
-                if (parent != null) {
-                    logger.debug("RelVisitor.Parent\t" + i[0] + " : " + parent.getDigest());
-                }
-                logger.debug("\t\tRelVisitor.Node\t" + i[0] + " : " + node.getDigest());
-                for (RelNode child : node.getInputs()) {
-                    logger.debug("\t\t\t\tRelVisitor.Child\t" + i[0] + " : " + child.getDigest());
-                }
-
-                if (node instanceof Project) { // EXPLAIN: if it's a Project, we want to find him a matching TableScan/Join to get Schema and Table information
-                    List<Pair<RexNode, String>> namedProjects = ((Project) node).getNamedProjects();
-                    projects.addAll(namedProjects);
-
-                    new RelVisitor() {
-
-                        @Override
-                        // EXPLAIN: initial input is a child of pNode = project node. go through the tree and discover first scan, that should be the correct one
-                        public void visit(RelNode pNode, int ordinal, RelNode parent) {
-                            if (pNode instanceof TableScan) {
-                                // EXPLAIN: if it's a Table Scan, this is most likely the correct one
-
-                                final TableScan scan = (TableScan) pNode;
-                                // EXPLAIN: get information about table
-                                RelOptTable table = scan.getTable();
-                                String schemaName = table.getQualifiedName().get(0);
-                                String tableName = table.getQualifiedName().get(1);
-
-                                // TODO: add check that Project->Fields are subset of TableScan->Fields to confirm this is a correct TableScan - in case of Join, this is more complicated
-                                for (RelDataTypeField relDataTypeField : table.getRowType().getFieldList()) {
-                                    relDataTypeField.getName();
-                                }
-
-                                // EXPLAIN: go through the list of fields in Project and add them to the usedFields, together with discovered TableScan schema and table names.
-                                for (Pair<RexNode, String> field : namedProjects) {
-                                    String fieldName = field.getValue();
-                                    usedFields.add(MultiCloudField.of(schemaName, tableName, fieldName));
-                                }
-                            } else if (pNode instanceof Join) {
-                                // EXPLAIN: if it's a Join, we need to start new relVisitors on each branch
-                                // TODO: add relVisitors on each child branch of JOIN
-                                Join join = (Join) pNode;
-                                if (join.getInputs().size() != 2) {
-                                    // Bail out
-                                    throw new ReturnedValue(false);
-                                }
-
-                                // FIXME: ADD REAL HANDLERS FOR JOIN
-                                // TODO: join handler should look for tableScan, another join or project
-                                // First branch should have the query (with write ID filter conditions)
-                                new RelVisitor() {
-                                    @Override
-                                    public void visit(RelNode node, int ordinal, RelNode parent) {
-                                        if (node instanceof TableScan ||
-                                                node instanceof Filter ||
-                                                node instanceof Project ||
-                                                node instanceof Join) {
-                                            // We can continue
-                                            super.visit(node, ordinal, parent);
-                                        } else if (node instanceof Aggregate) {
-                                            // We can continue
-                                            super.visit(node, ordinal, parent);
-                                        } else {
-                                            throw new ReturnedValue(false);
-                                        }
-                                    }
-                                }.go(join.getInput(0));
-                                // Second branch should only have the MV
-                                new RelVisitor() {
-                                    @Override
-                                    public void visit(RelNode node, int ordinal, RelNode parent) {
-                                        if (node instanceof TableScan) {
-                                            // We can continue
-                                            // TODO: Need to check that this is the same MV that we are rebuilding
-                                            RelOptTable table = (RelOptTable) node.getTable();
-
-                                        } else if (node instanceof Project) {
-                                            // We can continue
-                                            super.visit(node, ordinal, parent);
-                                        }
-                                    }
-                                }.go(join.getInput(1));
-                            }
-
-                            // EXPLAIN: otherwise, continue to next child
-                            super.visit(pNode, ordinal, parent);
-                        }
-                    }.go(node.getInput(0)); // EXPLAIN: Project always has single child
-                } // EXPLAIN: I got all the projects
-
-                // TODO: can we map them now?
-
-                i[0]++;
-                super.visit(node, ordinal, parent); // visit children
+        // EXPLAIN: can we map (most of) them now? Yes, we can!
+        if (!isUpdate[0]) { // this is a part about "most of them"
+            for (String projectFieldName : projects) {
+                tables.forEach((table, fields) -> {
+                    if (fields.contains(projectFieldName)) {
+                        String schemaName = table.getQualifiedName().get(0);
+                        String tableName = table.getQualifiedName().get(1);
+                        usedFields.add(MultiCloudField.of(schemaName, tableName, projectFieldName));
+                    }
+                });
             }
-        };
-        visitor.go(node);
+        }
 
         logger.debug("RelVisitor:Done\n\t" + usedFields.stream()
                 .map(MultiCloudField::toString)
                 .collect(Collectors.joining("\n\t")));
-        return usedFields;
+
+        return MultiCloudFieldSets.ofList(usedFields);
     }
 
+    private static void debug(final RelNode node, final RelNode parent) {
+        if (parent != null) {
+            logger.debug("RelVisitor.Parent\t" + " : " + parent.getDigest());
+        }
+        logger.debug("\t\tRelVisitor.Node\t" + " : " + node.getDigest());
+        for (RelNode child : node.getInputs()) {
+            logger.debug("\t\t\t\tRelVisitor.Child\t" + " : " + child.getDigest());
+        }
+    }
+
+    private static List<RelDataTypeField> getFields(RelNode node) {
+        return node.getRowType().getFieldList();
+    }
+
+    private static Set<String> getFieldNames(RelNode node) {
+        return getFieldNames(getFields(node));
+    }
+
+    private static Set<String> getFieldNames(List<RelDataTypeField> fields) {
+        HashSet<String> names = new HashSet<>();
+
+        fields.forEach(field -> names.add(field.getName()));
+
+        return names;
+    }
 
     /**
      * Exception used to interrupt a visitor walk.

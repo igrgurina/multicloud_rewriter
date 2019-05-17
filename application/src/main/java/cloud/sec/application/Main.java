@@ -19,17 +19,24 @@ public class Main {
         String scanFilterProjectAll = "SELECT * FROM employees WHERE `id` IN (100,2,3,4)";
         String scanFilterProjectOne = "SELECT `age` FROM employees WHERE `age` < 30";
         String scanFilterProjectTwo = "SELECT `first`, `age` FROM employees WHERE `age` < 30";
-        String tableModify = "INSERT INTO `employees` (`id`, `age`,`first`,`last`) VALUES (9, 20, 'ime', 'prezime')";
+        String tableModifyInsert = "INSERT INTO `employees` (`id`, `age`,`first`,`last`,`city_id`) VALUES (13, 20, 'Ivan', 'Grgurina', 1)";
+        String tableModifyUpdate = "UPDATE `mc_db`.`employees` SET `id` = 13, `age` = 17, `first` = 'Ivan', `last` = 'Grgurina', `city_id` = 1 WHERE `id` = 13";
+        String tableModifyUpdatePartial = "UPDATE `mc_db`.`employees` SET `age` = 25 WHERE `id` = 13";
+        String tableModifyDelete = "DELETE FROM `mc_db`.`employees` WHERE `id` = 13";
 
         String dbSettingsFile = "application/src/main/resources/calcite.properties";
 
         //execute(scanProjectAll, dbSettingsFile); // works
-        execute(scanJoinFilterProjectAll, dbSettingsFile);
+        //execute(scanJoinFilterProjectAll, dbSettingsFile); // works
         //execute(scanProjectOne, dbSettingsFile); // works
         //execute(scanFilterProjectAll, dbSettingsFile); // works
         //execute(scanFilterProjectOne, dbSettingsFile); // works
         //execute(scanFilterProjectTwo, dbSettingsFile); // works
-        //execute(tableModify, dbSettingsFile); // FIXME: doesn't work because we don't handle TableModify right now
+
+        execute(tableModifyInsert, dbSettingsFile); // works - shows entire table
+        execute(tableModifyUpdate, dbSettingsFile); // works - but, using exception to interrupt RelVisitor
+        execute(tableModifyUpdatePartial, dbSettingsFile); // works - but, using exception to interrupt RelVisitor
+        execute(tableModifyDelete, dbSettingsFile); // works - shows entire table
     }
 
     private static void execute(String query, String dbSettingsFile) {
