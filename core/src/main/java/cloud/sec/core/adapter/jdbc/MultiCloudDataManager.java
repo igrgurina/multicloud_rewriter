@@ -76,7 +76,7 @@ public class MultiCloudDataManager {
 
                     //TODO: if it's TableModify INSERT, insert all table fields fields right here
                     if (operation == TableModify.Operation.INSERT) {
-                        fieldNames = getFieldNames(tableModify.deriveRowType().getFieldList());
+                        fieldNames = getFieldNames(tableModify.getTable().getRowType().getFieldList());
                     }
 
                     //TODO: if it's UPDATE, check operation=[UPDATE], updateColumnList=[[age]]
@@ -85,6 +85,7 @@ public class MultiCloudDataManager {
                     }
 
                     // TODO: handle mapping for INSERT and UPDATE here, since they're special
+                    // this doesn't trigger for DELETE because fieldNames are empty
                     for (String field : fieldNames) {
                         usedFields.add(MultiCloudField.of(schemaName, tableName, field));
                     }
