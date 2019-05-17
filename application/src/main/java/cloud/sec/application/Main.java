@@ -19,17 +19,17 @@ public class Main {
         String scanFilterProjectAll = "SELECT * FROM employees WHERE `id` IN (100,2,3,4)";
         String scanFilterProjectOne = "SELECT `age` FROM employees WHERE `age` < 30";
         String scanFilterProjectTwo = "SELECT `first`, `age` FROM employees WHERE `age` < 30";
-        String tableModify = "INSERT INTO `employees` (`id`, `age`,`first`,`last`) VALUES (9, 20, 'ime', 'prezime')";
+        String tableModify = "INSERT INTO `employees` (`id`, `age`,`first`,`last`,`city_id`) VALUES (9, 20, 'ime', 'prezime',1)";
 
         String dbSettingsFile = "application/src/main/resources/calcite.properties";
 
         //execute(scanProjectAll, dbSettingsFile); // works
-        //execute(scanJoinFilterProjectAll, dbSettingsFile);
-        execute(scanProjectOne, dbSettingsFile); // works
+        //execute(scanJoinFilterProjectAll, dbSettingsFile); // works
+        //execute(scanProjectOne, dbSettingsFile); // works
         //execute(scanFilterProjectAll, dbSettingsFile); // works
         //execute(scanFilterProjectOne, dbSettingsFile); // works
         //execute(scanFilterProjectTwo, dbSettingsFile); // works
-        //execute(tableModify, dbSettingsFile); // FIXME: doesn't work because we don't handle TableModify right now
+        execute(tableModify, dbSettingsFile); // FIXME: doesn't work because we don't handle TableModify right now
     }
 
     private static void execute(String query, String dbSettingsFile) {

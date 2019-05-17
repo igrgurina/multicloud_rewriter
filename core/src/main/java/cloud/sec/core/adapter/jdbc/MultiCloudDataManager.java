@@ -46,6 +46,7 @@ public class MultiCloudDataManager {
 
                 if (node instanceof TableScan || node instanceof TableModify) {
                     tables.put(node.getTable(), getFieldNames(node));
+                    //TODO: if it's TableModify, insert fields right here
                 }
 
                 if (node instanceof Project) {
