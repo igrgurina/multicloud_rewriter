@@ -1,5 +1,7 @@
 package cloud.sec.core.adapter.jdbc;
 
+import cloud.sec.core.tools.MultiCloudFieldSet;
+import cloud.sec.core.tools.MultiCloudFieldSets;
 import com.google.common.collect.Sets;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelNode;
@@ -40,7 +42,7 @@ public class MultiCloudDataManager {
         return tables;
     }
 
-    public static Set<MultiCloudField<String, String, String>> findFields(final RelNode node) {
+    public static MultiCloudFieldSet findFields(final RelNode node) {
         //logger.debug("RelVisitor:Init");
 
         final Set<MultiCloudField<String, String, String>> usedFields = Sets.newLinkedHashSet();
@@ -155,7 +157,8 @@ public class MultiCloudDataManager {
         logger.debug("RelVisitor:Done\n\t" + usedFields.stream()
                 .map(MultiCloudField::toString)
                 .collect(Collectors.joining("\n\t")));
-        return usedFields;
+
+        return MultiCloudFieldSets.ofList(usedFields);
     }
 
 
