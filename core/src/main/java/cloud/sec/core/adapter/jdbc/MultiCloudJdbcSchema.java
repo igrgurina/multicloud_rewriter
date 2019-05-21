@@ -29,7 +29,7 @@ public class MultiCloudJdbcSchema extends JdbcSchema {
 
         @Override
         public Schema create(SchemaPlus parentSchema, String name, Map<String, Object> operand) {
-            logger.debug("INIT SCHEMA FROM JSON CONFIGURATION: " + name);
+            logger.info("Init Schema from .json configuration: " + name);
             JdbcSchema original = JdbcSchema.create(parentSchema, name, operand);
 
             MultiCloudRuleManager.MultiCloudHookManager.addHook();

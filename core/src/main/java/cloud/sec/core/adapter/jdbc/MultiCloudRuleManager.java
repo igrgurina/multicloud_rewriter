@@ -86,14 +86,14 @@ public class MultiCloudRuleManager {
             super(operand(JdbcTableScan.class, none()),
                     relBuilderFactory,
                     MultiCloudScanRewriterRule.class.getSimpleName());
-            logger.debug("INIT custom rule: " + this.getClass().getSimpleName());
+            logger.info("Using custom rule: " + this.getClass().getSimpleName());
         }
 
 
         public void onMatch(RelOptRuleCall call) {
             RelWriter rw = new RelWriterImpl(new PrintWriter(System.out, true));
 
-            logger.debug("MATCHED OPERAND");
+            logger.info("Executing rule");
             final JdbcTableScan originalScan = (JdbcTableScan) call.rels[0];
             originalScan.explain(rw);
 
@@ -110,9 +110,9 @@ public class MultiCloudRuleManager {
                         .scan("mc_db_google", "employees")
                         .project(builder.field("multiid"), builder.field("id"), builder.field("first"), builder.field("last"))
                         .scan("mc_db_amazon", "employees")
-                        .project(builder.field("multiid"), builder.field("age"))
+                        .project(builder.field("multiid"), builder.field("age"), builder.field("city_id"))
                         .join(JoinRelType.INNER, "multiid")
-                        .project(builder.field("id"), builder.field("age"), builder.field("first"), builder.field("last"))
+                        .project(builder.field("id"), builder.field("age"), builder.field("first"), builder.field("last"), builder.field("city_id"))
                         .build();
 
                 logger.debug("RESULT");
@@ -121,43 +121,6 @@ public class MultiCloudRuleManager {
                 call.transformTo(multiCloudScan);
                 logger.debug(call.getMetadataQuery().getCumulativeCost(multiCloudScan).toString());
             }
-        }
-    }
-
-    // TODO: Remove this rule when done with RelVisitor implementation
-    public static class MultiCloudDataCollector extends RelOptRule {
-
-        public static final RelOptRule INSTANCE =
-                new MultiCloudDataCollector(RelFactories.LOGICAL_BUILDER);
-
-
-        public MultiCloudDataCollector(RelBuilderFactory relBuilderFactory) {
-            super(operand(LogicalProject.class,
-                    operand(JdbcTableScan.class, none())),
-                    relBuilderFactory,
-                    MultiCloudDataCollector.class.getSimpleName());
-            logger.debug("INIT custom rule: " + this.getClass().getSimpleName());
-        }
-
-        public void onMatch(RelOptRuleCall call) {
-            RelWriter rw = new RelWriterImpl(new PrintWriter(System.out, true));
-
-            final LogicalProject project = call.rel(0);
-            project.explain(rw);
-
-            final JdbcTableScan scan = call.rel(1);
-            scan.explain(rw);
-
-            RelOptTable table = scan.getTable();
-            String schemaName = table.getQualifiedName().get(0);
-            String tableName = table.getQualifiedName().get(1);
-
-
-            List<Pair<RexNode, String>> namedProjects = project.getNamedProjects();
-            logger.debug("namedProjects for " + schemaName + "." + tableName + ": " +
-                    namedProjects.stream()
-                            .map(n -> n.getValue())
-                            .collect(Collectors.joining(", ")));
         }
     }
 }
