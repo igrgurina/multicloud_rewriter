@@ -15,7 +15,7 @@ public class Main {
 
         String scanProjectAll = "SELECT * FROM cities";
         String scanJoinFilterProjectAll = "SELECT * FROM cities, employees WHERE employees.city_id = cities.id";
-        String scanProjectOne = "SELECT `employees`.`age` FROM employees";
+        String scanProjectOne = "SELECT `age` FROM employees";
         String scanFilterProjectAll = "SELECT * FROM employees WHERE `id` IN (100,2,3,4)";
         String scanFilterProjectOne = "SELECT `age` FROM employees WHERE `age` < 30";
         String scanFilterProjectTwo = "SELECT `first`, `age` FROM employees WHERE `age` < 30";
@@ -31,15 +31,17 @@ public class Main {
         //execute(scanProjectOne, dbSettingsFile); // works
         //execute(scanFilterProjectAll, dbSettingsFile); // works
         //execute(scanFilterProjectOne, dbSettingsFile); // works
-        //execute(scanFilterProjectTwo, dbSettingsFile); // works
+        execute(scanFilterProjectTwo, dbSettingsFile); // works
 
-        execute(tableModifyInsert, dbSettingsFile); // works - shows entire table
-        execute(tableModifyUpdate, dbSettingsFile); // works - but, using exception to interrupt RelVisitor
-        execute(tableModifyUpdatePartial, dbSettingsFile); // works - but, using exception to interrupt RelVisitor
-        execute(tableModifyDelete, dbSettingsFile); // works - shows entire table
+        //execute(tableModifyInsert, dbSettingsFile); // works - shows entire table
+        //execute(tableModifyUpdate, dbSettingsFile); // works - but, using exception to interrupt RelVisitor
+        //execute(tableModifyUpdatePartial, dbSettingsFile); // works - but, using exception to interrupt RelVisitor
+        //execute(tableModifyDelete, dbSettingsFile); // works - shows entire table
     }
 
     private static void execute(String query, String dbSettingsFile) {
+        logger.info("Executing query: " + query);
+
         try {
             FileReader dbSettingsReader = new FileReader(dbSettingsFile);
             Properties dbSettings = new Properties();
@@ -69,13 +71,18 @@ public class Main {
 
         ResultSetMetaData meta = results.getMetaData();
         int noOfColumns = meta.getColumnCount();
+
+        StringBuilder log = new StringBuilder();
         while (results.next()) {
+            log.append("\n");
             for (int i = 1; i <= noOfColumns; i++) {
                 String columnName = meta.getColumnName(i);
                 Object columnValue = results.getObject(columnName);
-                logger.info(columnName + " = " + String.format("%-15s", String.valueOf(columnValue)) + "|");
+                log.append(columnName).append(" = ").append(String.format("%-15s", String.valueOf(columnValue))).append("|\t\t");
             }
         }
+        logger.info(log.toString());
+
         results.close();
     }
 

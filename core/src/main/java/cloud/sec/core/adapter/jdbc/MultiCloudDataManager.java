@@ -24,7 +24,7 @@ public class MultiCloudDataManager {
 
 
     public static MultiCloudFieldSet findFields(final RelNode node) {
-        logger.debug("RelVisitor:Init");
+        logger.info("RelVisitor:Init");
 
         //EXPLAIN: I need list of tables and list of projects.
         // From that I can get table fields, table schema and table name,
@@ -115,21 +115,24 @@ public class MultiCloudDataManager {
                 });
             }
         }
-
-        logger.debug("RelVisitor:Done\n\t" + usedFields.stream()
-                .map(MultiCloudField::toString)
-                .collect(Collectors.joining("\n\t")));
+        if (logger.isInfoEnabled()) {
+            logger.info("RelVisitor:Done\n\t" + usedFields.stream()
+                    .map(MultiCloudField::toString)
+                    .collect(Collectors.joining("\n\t")));
+        }
 
         return MultiCloudFieldSets.ofList(usedFields);
     }
 
     private static void debug(final RelNode node, final RelNode parent) {
-        if (parent != null) {
-            logger.debug("RelVisitor.Parent\t" + " : " + parent.getDigest());
-        }
-        logger.debug("\t\tRelVisitor.Node\t" + " : " + node.getDigest());
-        for (RelNode child : node.getInputs()) {
-            logger.debug("\t\t\t\tRelVisitor.Child\t" + " : " + child.getDigest());
+        if (logger.isDebugEnabled()) {
+            if (parent != null) {
+                logger.debug("RelVisitor.Parent\t" + " : " + parent.getDigest());
+            }
+            logger.debug("\t\tRelVisitor.Node\t" + " : " + node.getDigest());
+            for (RelNode child : node.getInputs()) {
+                logger.debug("\t\t\t\tRelVisitor.Child\t" + " : " + child.getDigest());
+            }
         }
     }
 

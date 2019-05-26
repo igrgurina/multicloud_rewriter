@@ -17,7 +17,7 @@ CREATE TABLE `mc_db`.`employees` (
   `first` varchar(255) DEFAULT NULL,
   `last` varchar(255) DEFAULT NULL,
   `city_id` INT(11) NULL,
-  `age` int(3) NOT NULL,
+  `age` INT(3) NOT NULL,
   PRIMARY KEY (`id`));
 
 CREATE TABLE `mc_db`.`cities` (
@@ -34,13 +34,14 @@ ADD CONSTRAINT `cityId`
 
 CREATE TABLE `mc_db_amazon`.`employees` (
   `multiid` int(11) NOT NULL,
-  `id` int(11) NOT NULL,
-  `age` int(3) NOT NULL,
+  `id` INT(11) NOT NULL,
+  `age` INT(3) NOT NULL,
+  `city_id` INT(11) NULL
 );
 
 CREATE TABLE `mc_db_google`.`employees` (
-  `multiid` int(11) NOT NULL,
-  `id` int(11) NOT NULL,
+  `multiid` INT(11) NOT NULL,
+  `id` INT(11) NOT NULL,
   `first` varchar(255) DEFAULT NULL,
   `last` varchar(255) DEFAULT NULL
 );

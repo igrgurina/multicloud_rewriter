@@ -9,7 +9,7 @@
       "operand": {
         "jdbcUser": "root",
         "jdbcPassword": "toor",
-        "jdbcUrl": "jdbc:mysql://localhost:3307/mc_db_amazon",
+        "jdbcUrl": "jdbc:mysql://localhost:3307/mc_db_amazon?serverTimezone=UTC",
         "jdbcCatalog": "mc_db_amazon"
       }
     },
@@ -20,7 +20,7 @@
       "operand": {
         "jdbcUser": "root",
         "jdbcPassword": "toor",
-        "jdbcUrl": "jdbc:mysql://localhost:3307/mc_db_google",
+        "jdbcUrl": "jdbc:mysql://localhost:3307/mc_db_google?serverTimezone=UTC",
         "jdbcCatalog": "mc_db_google"
       }
     },
@@ -31,7 +31,7 @@
       "operand": {
         "jdbcUser": "root",
         "jdbcPassword": "toor",
-        "jdbcUrl": "jdbc:mysql://localhost:3307/mc_db",
+        "jdbcUrl": "jdbc:mysql://localhost:3307/mc_db?serverTimezone=UTC",
         "jdbcCatalog": "mc_db"
       }
     }
