@@ -23,7 +23,7 @@
     </mailingLists>
 
     <properties>
-        <calcite.version>1.19.0</calcite.version>
+        <calcite.version>1.32.0</calcite.version>
         <logger.version>1.2.3</logger.version>
         <mysql-driver.version>8.0.15</mysql-driver.version>
         <slf4j.version>1.7.25</slf4j.version>
